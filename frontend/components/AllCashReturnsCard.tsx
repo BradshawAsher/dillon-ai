@@ -220,7 +220,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 statusBadge={
                                     <DataOriginBadge
                                         origin="calculated"
-                                        label="Derived ROI"
+                                        label="Calculated (ROI)"
                                         metricLabel="Simple annual ROI"
                                         metricValue={annualRoi === null ? 'Not available' : `${(annualRoi * 100).toFixed(1)}%`}
                                         formula="annual cash flow ÷ initial investment"
@@ -240,7 +240,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 statusBadge={
                                     <DataOriginBadge
                                         origin="calculated"
-                                        label="Payback Timeline"
+                                        label="Calculated (Payback)"
                                         metricLabel="Payback period"
                                         metricValue={paybackYears === null ? 'Not available' : `${paybackYears.toFixed(1)} years`}
                                         formula="initial investment ÷ annual cash flow"
@@ -263,7 +263,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 statusBadge={
                                     <DataOriginBadge
                                         origin="calculated"
-                                        label="Cumulative Cash Flow"
+                                        label="Calculated (Cash Flow)"
                                         metricLabel="Cumulative operating cash flow"
                                         metricValue={cumulativeHoldCashFlow === null ? 'Add hold period' : money(cumulativeHoldCashFlow, currency)}
                                         formula="annual operating cash flow × hold period"
@@ -282,7 +282,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 statusBadge={
                                     <DataOriginBadge
                                         origin="calculated"
-                                        label="Operating MOIC"
+                                        label="Calculated (Operating MOIC)"
                                         metricLabel="Operating cash-flow MOIC"
                                         metricValue={operatingMoic === null ? 'Add hold period' : `${operatingMoic.toFixed(2)}x`}
                                         formula="cumulative operating cash flow ÷ initial investment"
@@ -301,7 +301,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 statusBadge={
                                     <DataOriginBadge
                                         origin="calculated"
-                                        label="Exit Proceeds"
+                                        label="Calculated (Exit Proceeds)"
                                         metricLabel="Net exit proceeds"
                                         metricValue={netExitProceeds === null ? 'Add exit inputs' : money(netExitProceeds, currency)}
                                         formula="EBITDA/SDE × exit multiple − exit costs"
@@ -321,7 +321,7 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 statusBadge={
                                     <DataOriginBadge
                                         origin="calculated"
-                                        label="All-Cash Return"
+                                        label="Calculated (Total MOIC)"
                                         metricLabel="Total MOIC / IRR"
                                         metricValue={!exitReady ? 'Add exit inputs' : `${totalMoic?.toFixed(2) ?? '—'}x / ${irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}`}
                                         formula="IRR(all-cash timeline), MOIC((cumulative cash + net exit) ÷ investment)"

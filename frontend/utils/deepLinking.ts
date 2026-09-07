@@ -102,6 +102,17 @@ const SECTION_ANCHOR_MAP: Record<string, WorkspaceTab> = {
     'synthesis-valuation': 'synthesis',
     'synthesis-material-impact': 'synthesis',
     'synthesis-filters': 'synthesis',
+    'synthesis-red-flags': 'synthesis',
+    'synthesis-yellow-flags': 'synthesis',
+    'synthesis-green-flags': 'synthesis',
+    'synthesis-takeaways': 'synthesis',
+    'synthesis-doc-thesis': 'synthesis',
+    'synthesis-conflicts': 'synthesis',
+    'synthesis-negotiation': 'synthesis',
+    'synthesis-missing-docs': 'synthesis',
+    'synthesis-open-questions': 'synthesis',
+    'synthesis-management-questions': 'synthesis',
+    'synthesis-mgmt-questions': 'synthesis',
     // spending
     'spending-model': 'spending',
     'spending-api-calls': 'spending',
@@ -359,4 +370,58 @@ export function syncBrowserUrl(projectKey?: string, tab?: WorkspaceTab | string)
     } catch {
         // Ignore in restricted iframe environments
     }
+}
+
+/**
+ * Reliably scrolls to a target DOM element even when the target tab is dynamically
+ * rendering and inflating its layout over hundreds of milliseconds.
+ * Retries at multiple intervals and applies a temporary focus/pulse highlight.
+ */
+export function scrollToAnchorWithRetry(
+    anchorId: string,
+    options: {
+        highlight?: boolean
+        behavior?: ScrollBehavior
+        block?: ScrollLogicalPosition
+    } = {}
+): boolean {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return false
+
+    const {
+        highlight = true,
+        behavior = 'smooth',
+        block = 'start',
+    } = options
+
+    const cleanId = anchorId.replace(/^#/, '')
+    let highlightApplied = false
+
+    const applyHighlight = (el: HTMLElement) => {
+        if (!highlight || highlightApplied) return
+        highlightApplied = true
+        el.classList.add('ring-4', 'ring-primary', 'ring-offset-2', 'transition-all', 'duration-500')
+        window.setTimeout(() => {
+            el.classList.remove('ring-4', 'ring-primary', 'ring-offset-2')
+        }, 3000)
+    }
+
+    // Attempt immediately and across intervals to accommodate async tab mounting and layout expansion
+    const pollIntervals = [0, 50, 150, 300, 600, 1000, 1400]
+
+    pollIntervals.forEach((delay) => {
+        window.setTimeout(() => {
+            const el = document.getElementById(cleanId)
+                || document.querySelector(`[data-anchor-id="${cleanId}"]`)
+                || document.querySelector(`[data-anchor-alias="${cleanId}"]`)
+                || (cleanId === 'synthesis-mgmt-questions' ? document.getElementById('synthesis-management-questions') : null)
+                || (cleanId === 'synthesis-management-questions' ? document.getElementById('synthesis-open-questions') : null)
+
+            if (el instanceof HTMLElement) {
+                el.scrollIntoView({ behavior, block })
+                applyHighlight(el)
+            }
+        }, delay)
+    })
+
+    return true
 }

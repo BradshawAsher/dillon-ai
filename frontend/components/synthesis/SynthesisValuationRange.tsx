@@ -54,7 +54,7 @@ export default function SynthesisValuationRange({
                             <p className="text-xs text-muted-foreground font-medium">Lower Bound (Bear)</p>
                             <DataOriginBadge
                                 origin="calculated"
-                                label="Bear Valuation"
+                                label="Calculated (Bear EV)"
                                 metricLabel="Valuation Lower Bound (Bear Case)"
                                 metricValue={formatCurrencyValue(lowerBound || '', currency || 'USD') || 'Pending'}
                                 formula="Downside Normalized EBITDA × Conservative Valuation Multiple"
@@ -69,7 +69,7 @@ export default function SynthesisValuationRange({
                             <p className="text-xs font-semibold text-primary">Base Valuation (Buyer Fair Value)</p>
                             <DataOriginBadge
                                 origin="calculated"
-                                label="Fair Value"
+                                label="Calculated (Fair Value)"
                                 metricLabel="Base Intrinsic Valuation (Buyer Fair Value)"
                                 metricValue={formatCurrencyValue(baseEstimate || '', currency || 'USD') || 'Pending'}
                                 formula="Adjusted TTM EBITDA × Benchmark Transaction Multiple ± Working Capital Adjustment"
@@ -84,7 +84,7 @@ export default function SynthesisValuationRange({
                             <p className="text-xs text-muted-foreground font-medium">Upper Bound (Bull)</p>
                             <DataOriginBadge
                                 origin="calculated"
-                                label="Bull Valuation"
+                                label="Calculated (Bull EV)"
                                 metricLabel="Valuation Upper Bound (Bull Case)"
                                 metricValue={formatCurrencyValue(upperBound || '', currency || 'USD') || 'Pending'}
                                 formula="Expansion EBITDA × Premium Market Multiple"

@@ -111,7 +111,7 @@ export default function NegotiationValuationBridgeCard({ model, synthesis, proje
                     <div className="rounded-xl border border-border bg-muted/30 p-3">
                         <div className="flex items-center justify-between mb-0.5">
                             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Initial LOI Valuation</p>
-                            <DataOriginBadge origin={model.purchasePrice ? "user_entered" : "assumption"} label={model.purchasePrice ? "Saved LOI" : "Model Anchor"} compact />
+                            <DataOriginBadge origin={model.purchasePrice ? "user_entered" : "assumption"} label={model.purchasePrice ? "User Input (Saved LOI)" : "Assumption (Anchor)"} compact />
                         </div>
                         <p className="text-lg font-bold text-foreground mt-0.5">{formatMoney(bridge.baselinePurchasePrice)}</p>
                         <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">
@@ -121,7 +121,7 @@ export default function NegotiationValuationBridgeCard({ model, synthesis, proje
                     <div className="rounded-xl border border-rose-500/25 bg-rose-500/5 p-3">
                         <div className="flex items-center justify-between mb-0.5">
                             <p className="text-[10px] font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-400">Total EV Deductions</p>
-                            <DataOriginBadge origin="calculated" label="Haircut" formula="Σ EV Deductions" compact />
+                            <DataOriginBadge origin="calculated" label="Calculated (Haircut)" formula="Σ EV Deductions" compact />
                         </div>
                         <p className="text-lg font-bold text-rose-700 dark:text-rose-400 mt-0.5">
                             -{formatMoney(bridge.totalEvDeduction)}
@@ -133,7 +133,7 @@ export default function NegotiationValuationBridgeCard({ model, synthesis, proje
                     <div className="rounded-xl border border-blue-500/25 bg-blue-500/5 p-3">
                         <div className="flex items-center justify-between mb-0.5">
                             <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400">Special Escrow Fund</p>
-                            <DataOriginBadge origin="calculated" label="Sized Escrow" formula="Σ Indemnity Escrows" compact />
+                            <DataOriginBadge origin="calculated" label="Calculated (Escrow)" formula="Σ Indemnity Escrows" compact />
                         </div>
                         <p className="text-lg font-bold text-blue-700 dark:text-blue-400 mt-0.5">{formatMoney(bridge.totalSpecialEscrow)}</p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">R&amp;W / tax holdback</p>
@@ -141,7 +141,7 @@ export default function NegotiationValuationBridgeCard({ model, synthesis, proje
                     <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
                         <div className="flex items-center justify-between mb-0.5">
                             <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Defensible Counter-Offer</p>
-                            <DataOriginBadge origin="calculated" label="Counter-Offer" formula="Initial LOI − EV Deductions" compact />
+                            <DataOriginBadge origin="calculated" label="Calculated (Counter-Offer)" formula="Initial LOI − EV Deductions" compact />
                         </div>
                         <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">{formatMoney(bridge.defensibleCounterOffer)}</p>
                         <p className="text-[10px] font-semibold text-emerald-700/80 dark:text-emerald-400/80 mt-0.5">
@@ -166,7 +166,7 @@ export default function NegotiationValuationBridgeCard({ model, synthesis, proje
                                 <div className="space-y-1 max-w-xl">
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-xs font-bold text-foreground">{item.title}</span>
-                                        <DataOriginBadge origin="extracted" label="AI Diligence Finding" compact />
+                                        <DataOriginBadge origin="extracted" label="Extracted (AI Finding)" compact />
                                         <span className={`px-1.5 py-0.2 rounded text-[9px] font-semibold uppercase ${
                                             item.category === 'ebitda_haircut'
                                                 ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30'

@@ -8,6 +8,7 @@ dist/
 .agents
 .codex/
 AGENTS.md
+agents.md
 .claude/settings.local.json
 .claude/settings.json
 *.log
@@ -15,6 +16,7 @@ AGENTS.md
 settings-bedrock.json
 settings-vertex.json
 GEMINI.md
+gemini.md
 /Pod 1 - Financial Due diligence Agent Sample Deals
 .ai/
 .kiro/
@@ -23,6 +25,10 @@ GEMINI.md
 .env*
 scratch/
 CLAUDE.md
+claude.md
+CODEX.md
+codex.md
+*.agent.md
 SUPADEMO_RECORDING_PLAN.md
 .cursor/
 .freebuf/

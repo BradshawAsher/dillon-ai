@@ -1,4 +1,4 @@
-import { Info, Bot } from 'lucide-react'
+import { Info, Bot, Calculator } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useFloatingPosition } from '../hooks/useFloatingPosition'
@@ -45,10 +45,10 @@ export default function InfoTip({ term, definition, formula }: Props) {
     const coords = useFloatingPosition({
         isOpen: open,
         targetRef: buttonRef,
-        popoverWidth: 260,
+        popoverWidth: 380,
         preferredPlacement: 'top',
-        margin: 6,
-        padding: 12,
+        margin: 8,
+        padding: 16,
     })
 
     const handleMouseEnter = () => {
@@ -125,15 +125,16 @@ export default function InfoTip({ term, definition, formula }: Props) {
                 onClick={() => setOpen(o => !o)}
                 onFocus={handleMouseEnter}
                 onBlur={handleMouseLeave}
-                className="inline-flex items-center justify-center rounded-full p-0.5 text-muted-foreground/60 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
+                className="inline-flex items-center justify-center rounded-full p-1 text-muted-foreground/70 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer transition-all"
                 aria-label={`What is ${term}?`}
                 aria-expanded={open}
             >
-                <Info className="h-3 w-3" />
+                <Info className="h-3.5 w-3.5" />
             </button>
             {open && typeof document !== 'undefined' && createPortal(
-                <span
+                <div
                     role="tooltip"
+                    aria-label={`${term} definition and diligence context`}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                     style={{
@@ -143,30 +144,54 @@ export default function InfoTip({ term, definition, formula }: Props) {
                         left: coords.left !== undefined ? `${coords.left}px` : undefined,
                         right: coords.right !== undefined ? `${coords.right}px` : undefined,
                         width: coords.width !== undefined ? `${coords.width}px` : undefined,
-                        maxHeight: coords.maxHeight !== undefined ? `${coords.maxHeight}px` : undefined,
+                        maxHeight: coords.maxHeight !== undefined ? `${coords.maxHeight}px` : '80vh',
                         zIndex: 99999,
                     }}
-                    className="overflow-y-auto rounded-lg border border-border bg-popover px-3 py-2 text-xs leading-relaxed text-popover-foreground shadow-xl ring-1 ring-border/50 animate-in fade-in-0 zoom-in-95 duration-100"
+                    className="overflow-y-auto rounded-xl border border-primary/30 bg-card text-card-foreground p-4 text-left shadow-2xl backdrop-blur-xl ring-1 ring-border/50 animate-in fade-in-0 zoom-in-95 duration-150"
                 >
-                    <span className="font-semibold block mb-0.5 text-foreground">{term}</span>
-                    <span className="text-muted-foreground block">{definition}</span>
-                    {formula ? (
-                        <span className="mt-1.5 block rounded bg-muted/60 px-2 py-1 font-mono text-[10px] text-foreground border border-border/50">
-                            <span className="font-semibold font-sans text-muted-foreground mr-1">Formula:</span>
-                            {formula}
+                    {/* Header */}
+                    <div className="border-b border-border/60 pb-2.5">
+                        <span className="inline-block rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary mb-1">
+                            Financial Diligence Term
                         </span>
-                    ) : null}
-                    <span className="mt-2 block border-t border-border/60 pt-1.5">
-                        <button
-                            type="button"
-                            onClick={handleAskAi}
-                            className="flex w-full items-center justify-center gap-1.5 rounded border border-primary/30 bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer shadow-2xs"
-                        >
-                            <Bot className="h-3 w-3" />
-                            <span>Ask AI to Explain</span>
-                        </button>
-                    </span>
-                </span>,
+                        <h4 className="text-sm font-bold text-foreground leading-tight">
+                            {term}
+                        </h4>
+                    </div>
+
+                    {/* Definition */}
+                    <div className="mt-3 space-y-2.5 text-xs text-foreground/90 leading-relaxed">
+                        <div>
+                            <p className="font-semibold text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                                Definition
+                            </p>
+                            <p className="text-foreground/90">{definition}</p>
+                        </div>
+
+                        {formula ? (
+                            <div className="rounded-lg bg-muted/50 p-2.5 border border-border/40">
+                                <p className="font-semibold text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 mb-0.5">
+                                    <Calculator className="h-3 w-3 text-primary" />
+                                    <span>Calculation Formula</span>
+                                </p>
+                                <p className="font-mono text-xs text-foreground/90 leading-snug">
+                                    {formula}
+                                </p>
+                            </div>
+                        ) : null}
+
+                        <div className="pt-2 mt-2 border-t border-border/50">
+                            <button
+                                type="button"
+                                onClick={handleAskAi}
+                                className="flex w-full items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer shadow-xs"
+                            >
+                                <Bot className="h-3.5 w-3.5" />
+                                <span>Ask AI to Explain</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>,
                 document.body
             )}
         </span>

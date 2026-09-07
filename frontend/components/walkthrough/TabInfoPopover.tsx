@@ -19,6 +19,26 @@ export default function TabInfoPopover({
     const [isOpen, setIsOpen] = useState(false)
     const popoverRef = useRef<HTMLDivElement | null>(null)
     const buttonRef = useRef<HTMLButtonElement | null>(null)
+    const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    const clearCloseTimer = () => {
+        if (closeTimeoutRef.current) {
+            clearTimeout(closeTimeoutRef.current)
+            closeTimeoutRef.current = null
+        }
+    }
+
+    const handleMouseEnter = () => {
+        clearCloseTimer()
+        setIsOpen(true)
+    }
+
+    const handleMouseLeave = () => {
+        clearCloseTimer()
+        closeTimeoutRef.current = setTimeout(() => {
+            setIsOpen(false)
+        }, 220)
+    }
 
     const coords = useFloatingPosition({
         isOpen,
@@ -69,12 +89,14 @@ export default function TabInfoPopover({
             <button
                 ref={buttonRef}
                 type="button"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
                 onClick={(e) => {
                     e.stopPropagation()
                     setIsOpen((prev) => !prev)
                 }}
                 className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground/60 transition-all hover:bg-primary/20 hover:text-primary hover:scale-110 active:scale-95 cursor-pointer"
-                title={`What is the ${meta.label} tab for? (Click for info & tab tutorial)`}
+                title={`What is the ${meta.label} tab for? (Hover for info & tab tutorial)`}
                 aria-label={`What is the ${meta.label} tab for?`}
                 aria-expanded={isOpen}
             >
@@ -96,6 +118,8 @@ export default function TabInfoPopover({
                     <div
                         ref={popoverRef}
                         role="dialog"
+                        onMouseEnter={clearCloseTimer}
+                        onMouseLeave={handleMouseLeave}
                         aria-label={`About ${meta.label} Tab`}
                         style={{
                             position: 'fixed',

@@ -157,7 +157,7 @@ describe('Data Lineage & Origin Badges Integration', () => {
         const html = renderToStaticMarkup(<FinancedReturnsCard model={baseModel} />)
         expect(html).toContain('data-origin-badge="calculated"')
         expect(html).toContain('Total MOIC / IRR')
-        expect(html).toContain('Levered Returns')
+        expect(html).toContain('Calculated (Levered MOIC)')
         expect(html).toContain('Equity at close')
         expect(html).toContain('Annual debt service')
     })
@@ -166,13 +166,13 @@ describe('Data Lineage & Origin Badges Integration', () => {
         const html = renderToStaticMarkup(<AllCashReturnsCard model={baseModel} />)
         expect(html).toContain('data-origin-badge="calculated"')
         expect(html).toContain('Total MOIC / IRR')
-        expect(html).toContain('All-Cash Return')
+        expect(html).toContain('Calculated (Total MOIC)')
         expect(html).toContain('Net exit proceeds')
     })
 
     it('RevenueBridgeCard separates extracted LTM revenue from assumption drivers and calculated exit', () => {
         const html = renderToStaticMarkup(<RevenueBridgeCard model={baseModel} />)
-        expect(html).toContain('Growth Attribution Model')
+        expect(html).toContain('Assumption (Growth Attribution)')
         expect(html).toContain('data-origin-badge="extracted"')
         expect(html).toContain('data-origin-badge="assumption"')
         expect(html).toContain('data-origin-badge="calculated"')
@@ -192,7 +192,7 @@ describe('Data Lineage & Origin Badges Integration', () => {
         expect(html).toContain('data-origin-badge="user_entered"')
         expect(html).toContain('data-origin-badge="calculated"')
         expect(html).toContain('Total Uses')
-        expect(html).toContain('Debt Plug')
+        expect(html).toContain('Calculated (Senior Debt)')
     })
 
     it('LeverageSafetyCard tags covenant standards as Institutional Covenant Benchmark', () => {

@@ -474,16 +474,28 @@ function inferTypeFromFileName(fileName: string) {
     if (name.includes('p&l') || name.includes('pnl') || name.includes('profit and loss') || name.includes('income statement')) {
         types.push('Profit and Loss Statement')
     }
-    if (name.includes('balance sheet')) {
+    if (name.includes('balance sheet') || name.includes('balancesheet') || name.includes('trial balance') || name.includes('trial_balance')) {
         types.push('Balance Sheet')
     }
-    if (name.includes('model') || name.includes('modelling') || name.endsWith('.xlsm') || name.endsWith('.xlsx')) {
+    if (name.includes('general ledger') || name.includes('general_ledger') || name.includes('gl_') || name.endsWith('_gl.csv')) {
+        types.push('General Ledger / Trial Balance')
+    }
+    if (name.includes('ar_aging') || name.includes('ar aging') || name.includes('accounts receivable')) {
+        types.push('Accounts Receivable Aging')
+    }
+    if (name.includes('tax') || name.includes('1120') || name.includes('1065') || name.includes('schedule')) {
+        types.push('Tax Return')
+    }
+    if (name.includes('bank') || name.includes('statement')) {
+        types.push('Bank Statements')
+    }
+    if (name.includes('model') || name.includes('modelling') || name.endsWith('.xlsm')) {
         types.push('Financial Model')
     }
-    if (name.includes('add-back') || name.includes('ebitda') || name.includes('normalization')) {
+    if (name.includes('add-back') || name.includes('addback') || name.includes('ebitda') || name.includes('normalization')) {
         types.push('EBITDA Normalization')
     }
-    if (name.includes('customer') || name.includes('concentration')) {
+    if (name.includes('customer') || name.includes('concentration') || name.includes('client') || name.includes('invoice')) {
         types.push('Customer or Revenue Analysis')
     }
     return types
@@ -493,13 +505,16 @@ function getDocumentTypeLabels(row: SubmissionHistoryItem) {
     try {
         const detected = JSON.parse(row.detectedDocumentTypesJson || '')
         if (Array.isArray(detected) && detected.every((value) => typeof value === 'string') && detected.length > 0) {
-            return detected.map((value) => value.trim()).filter(Boolean)
+            const meaningful = detected.map((value) => value.trim()).filter((v) => v && v.toLowerCase() !== 'other' && v.toLowerCase() !== 'auto-detect')
+            if (meaningful.length > 0) {
+                return meaningful
+            }
         }
     } catch {
         // Older rows do not have multi-type classification yet.
     }
 
-    if (row.detectedDocumentType?.trim() && row.detectedDocumentType.trim() !== 'auto-detect') {
+    if (row.detectedDocumentType?.trim() && row.detectedDocumentType.trim() !== 'auto-detect' && row.detectedDocumentType.trim().toLowerCase() !== 'other') {
         return [row.detectedDocumentType.trim()]
     }
 
@@ -508,11 +523,11 @@ function getDocumentTypeLabels(row: SubmissionHistoryItem) {
         return inferredFromFileName
     }
 
-    if (row.documentType.trim().length > 0 && row.documentType.trim() !== 'auto-detect') {
+    if (row.documentType.trim().length > 0 && row.documentType.trim() !== 'auto-detect' && row.documentType.trim().toLowerCase() !== 'other') {
         return [row.documentType.trim()]
     }
 
-    if (row.fileType.trim().length > 0) {
+    if (row.fileType.trim().length > 0 && row.fileType.trim().toLowerCase() !== 'other') {
         return [row.fileType.trim()]
     }
 

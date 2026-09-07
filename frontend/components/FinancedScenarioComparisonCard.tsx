@@ -93,7 +93,7 @@ export default function FinancedScenarioComparisonCard({ model }: { model: DealM
                                 <p className="font-semibold text-foreground">{scenario.name}</p>
                                 <DataOriginBadge
                                     origin="assumption"
-                                    label={`${scenario.name} Case`}
+                                    label={`Assumption (${scenario.name})`}
                                     metricLabel={`${scenario.name} Financed Scenario`}
                                     metricValue={`${(scenario.growth * 100).toFixed(1)}% growth · ${(scenario.margin * 100).toFixed(1)}% margin`}
                                     description={`Financed underwriting outcome under ${scenario.name.toLowerCase()} growth (${(scenario.growth * 100).toFixed(1)}%), margin (${(scenario.margin * 100).toFixed(1)}%), and ${scenario.exitMultiple}x exit multiple.`}

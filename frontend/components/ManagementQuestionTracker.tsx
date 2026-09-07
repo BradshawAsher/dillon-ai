@@ -71,7 +71,7 @@ export default function ManagementQuestionTracker({ projectId, suggestedQuestion
     }
 
     return (
-        <Card className="overflow-hidden">
+        <Card id="management-question-tracker" className="overflow-hidden scroll-mt-6">
             <CardHeader className="border-b border-border bg-card/80">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>

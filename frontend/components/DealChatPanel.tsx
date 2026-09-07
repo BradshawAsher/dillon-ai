@@ -307,7 +307,7 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
   - tab:analysis (anchors: #analysis-deal-on-a-page, #analysis-scorecard, #analysis-ebitda-quality, #analysis-revenue-bridge, #analysis-cohort-retention, #analysis-breakeven, #analysis-market-comps, #analysis-financing-scenarios, #analysis-asset-comp, #analysis-monte-carlo, #analysis-risk-matrix, #analysis-key-person, #analysis-seller-qa, #analysis-mgmt-questions, #analysis-closing-checklist, #analysis-term-sheet, #analysis-dd-requests)
   - tab:diagnostics (anchors: #deal-diagnostics, #diag-thesis, #diag-decision, #diag-quick-wins, #diag-strengths, #diag-risk-summary, #diag-risk-matrix, #diag-key-person, #diag-owner-dep, #diag-diligence-comp, #diag-closing-checklist, #diag-seller-qa, #diag-mgmt-questions, #diag-playbook, #diag-negotiation-impact, #diag-timeline, #diag-investor-readiness, #diag-term-sheet, #diag-dd-requests, #diag-public-data)
   - tab:diligence (anchors: #diligence-documents, #diligence-quality, #diligence-master-math-checks, #deal-model-readiness, #add-back-quality-card, #customer-concentration-card, #cohort-retention-card, #diligence-project-synth)
-  - tab:synthesis (anchors: #synthesis-judgment, #synthesis-valuation, #synthesis-red-flags)
+  - tab:synthesis (anchors: #synthesis-judgment, #synthesis-valuation, #synthesis-red-flags, #synthesis-management-questions, #synthesis-open-questions)
   - tab:structure (anchors: #structure-sources-uses, #structure-debt-schedule, #structure-covenants, #structure-stack, #structure-leverage, #structure-dscr, #structure-financing, #structure-working-capital-peg)
   - tab:valuation (anchors: #valuation-summary, #valuation-multiples, #valuation-dcf, #valuation-precedent, #valuation-gap, #valuation-comps, #valuation-sensitivity, #valuation-risk-adjusted)
   - tab:returns (anchors: #returns-summary, #returns-waterfall, #returns-sensitivity, #returns-cashflow, #returns-all-cash, #returns-financed, #returns-scenario, #returns-base, #returns-cash-on-cash, #returns-payback, #returns-hold-period)
@@ -373,6 +373,11 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
   - Locations: **Diligence Tab > Banking Add-Back Rules & SBA 7(a) Disallowances card** (#add-back-quality-card) or **Financial Analysis Tab > EBITDA Quality & QoE Score** (#analysis-ebitda-quality).
   - Deep-link: [Add-Back Banking Rules](tab:diligence#add-back-quality-card)
   - Capabilities: Recalculates normalized EBITDA and purchase price reductions when non-essential perks (luxury autos, family salaries, travel) are disallowed.
+- Data Lineage, Provenance & Number Hover Popovers:
+  - Every key number, valuation multiple, and formula in the dashboard features interactive hoverability via DataOriginBadge and CardInfoPopover.
+  - Hovering reveals the 3-tier provenance: 🟢 Documented Fact (exact page/cell citations), 🟣 Calculated Formula (algebraic equation breakdown), or 🟡 Underwriting Assumption (model parameters).
+  - Each popover contains an "Ask AI to explain" button that summons you to analyze that metric in depth for this project.
+  - When explaining metrics, always clarify whether a number is directly extracted from seller records, deterministically calculated, or an underwriting assumption.
 - Target Working Capital (NWC) Peg Calculator & APA Contract Clause:
   - Location: **Structure & Debt Tab > Target Working Capital Peg card** (#structure-working-capital-peg).
   - Deep-link: [Target Working Capital Peg](tab:structure#structure-working-capital-peg)

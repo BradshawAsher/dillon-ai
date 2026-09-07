@@ -246,7 +246,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             statusBadge={
                                 <DataOriginBadge
                                     origin="calculated"
-                                    label="Derived Return"
+                                    label="Calculated (Cash-on-Cash)"
                                     metricLabel="Cash-on-cash return"
                                     metricValue={coc === null ? 'Not available' : `${(coc * 100).toFixed(1)}%`}
                                     formula="cash after debt service ÷ equity at close"
@@ -267,7 +267,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             statusBadge={
                                 <DataOriginBadge
                                     origin="calculated"
-                                    label="Coverage Ratio"
+                                    label="Calculated (DSCR)"
                                     metricLabel="Debt-service coverage (DSCR)"
                                     metricValue={dscr === null ? 'Not available' : `${dscr.toFixed(2)}x`}
                                     formula="operating cash flow ÷ annual debt service"
@@ -288,7 +288,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             statusBadge={
                                 <DataOriginBadge
                                     origin="calculated"
-                                    label="Calculated Balance"
+                                    label="Calculated (Debt Balance)"
                                     metricLabel="Debt balance at exit"
                                     metricValue={debtBalanceAtExit === null ? 'Add hold period' : money(debtBalanceAtExit)}
                                     formula="Amortization schedule remaining principal at year N"
@@ -309,7 +309,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             statusBadge={
                                 <DataOriginBadge
                                     origin="calculated"
-                                    label="Terminal Equity"
+                                    label="Calculated (Net Equity)"
                                     metricLabel="Net equity proceeds at exit"
                                     metricValue={exitEquityProceeds === null ? 'Add exit inputs' : money(exitEquityProceeds)}
                                     formula="exit EV − transaction costs − remaining debt − seller note"
@@ -330,7 +330,7 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             statusBadge={
                                 <DataOriginBadge
                                     origin="calculated"
-                                    label="Levered Returns"
+                                    label="Calculated (Levered MOIC)"
                                     metricLabel="Total MOIC / IRR"
                                     metricValue={!exitReady ? 'Add exit inputs' : `${totalMoic?.toFixed(2) ?? '—'}x / ${irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}`}
                                     formula="IRR(cash flows), MOIC(total inflows ÷ equity)"

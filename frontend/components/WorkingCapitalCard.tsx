@@ -170,7 +170,7 @@ export default function WorkingCapitalCard({ model }: Props) {
                                     <p className="text-[10px] text-muted-foreground font-medium">Target Peg</p>
                                     <DataOriginBadge
                                         origin="calculated"
-                                        label="Normalized Peg"
+                                        label="Calculated (Target Peg)"
                                         metricLabel="Target Net Working Capital Peg"
                                         metricValue={`$${pegResult.targetPeg.toLocaleString()}`}
                                         formula={`Mean trailing ${selectedTimeframe} monthly NWC (Current Assets excl. cash − Current Liabilities excl. debt)`}
@@ -185,7 +185,7 @@ export default function WorkingCapitalCard({ model }: Props) {
                                     <p className="text-[10px] text-muted-foreground font-medium">Collar (±{collarPercent}%)</p>
                                     <DataOriginBadge
                                         origin="calculated"
-                                        label="Buffer Collar"
+                                        label="Calculated (Collar)"
                                         metricLabel={`Working Capital Collar (±${collarPercent}%)`}
                                         metricValue={`$${pegResult.collarLowerLimit.toLocaleString()} – $${pegResult.collarUpperLimit.toLocaleString()}`}
                                         formula={`Target Peg ± (Target Peg × ${collarPercent}%)`}
@@ -202,7 +202,7 @@ export default function WorkingCapitalCard({ model }: Props) {
                                     <p className="text-[10px] text-muted-foreground font-medium">Seasonal Swing</p>
                                     <DataOriginBadge
                                         origin="calculated"
-                                        label="Max Volatility"
+                                        label="Calculated (Volatility)"
                                         metricLabel="Seasonal NWC Volatility"
                                         metricValue={`$${pegResult.nwcSwing.toLocaleString()} (±${pegResult.volatilityPercent}%)`}
                                         formula="Peak Monthly NWC − Trough Monthly NWC"

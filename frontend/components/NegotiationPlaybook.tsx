@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Handshake, ChevronDown, ChevronUp, DollarSign, Target, Sparkles, Check, ArrowRight } from 'lucide-react'
+import { Handshake, ChevronDown, ChevronUp, DollarSign, Target, Sparkles, Check, ArrowRight, Undo2 } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import type { DealModel } from '../hooks/backend/diligence'
@@ -173,6 +173,7 @@ function buildPlaybook(synthesis: ProjectSynthesisItem, model: DealModel): Playb
 export default function NegotiationPlaybook({ synthesis, model, onUpdateDealModel }: Props) {
     const [expanded, setExpanded] = useState(false)
     const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set())
+    const [previousValues, setPreviousValues] = useState<Record<string, Partial<DealModel>>>({})
 
     const playbook = useMemo(() => {
         if (!synthesis || !(synthesis.negotiationLevers?.length || synthesis.redFlags?.length)) return []
@@ -186,8 +187,26 @@ export default function NegotiationPlaybook({ synthesis, model, onUpdateDealMode
 
     const handleApplyTactic = (item: PlaybookItem) => {
         if (!item.action || !onUpdateDealModel) return
+        const prevUpdates: Partial<DealModel> = {}
+        for (const key of Object.keys(item.action.updates) as Array<keyof DealModel>) {
+            prevUpdates[key] = (model[key] ?? null) as any
+        }
+        setPreviousValues((prev) => ({ ...prev, [item.id]: prevUpdates }))
         onUpdateDealModel(item.action.updates)
         setAppliedIds((prev) => new Set([...prev, item.id]))
+    }
+
+    const handleUnapplyTactic = (item: PlaybookItem) => {
+        if (!onUpdateDealModel) return
+        const prior = previousValues[item.id]
+        if (prior) {
+            onUpdateDealModel(prior)
+        }
+        setAppliedIds((prev) => {
+            const next = new Set(prev)
+            next.delete(item.id)
+            return next
+        })
     }
 
     return (
@@ -237,10 +256,23 @@ export default function NegotiationPlaybook({ synthesis, model, onUpdateDealMode
                                 {item.action && onUpdateDealModel ? (
                                     <div className="shrink-0 self-end sm:self-center">
                                         {isApplied ? (
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                                <Check className="h-3.5 w-3.5" />
-                                                Applied to model
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                                    <Check className="h-3.5 w-3.5" />
+                                                    Applied
+                                                </span>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => handleUnapplyTactic(item)}
+                                                    className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                                                    title="Revert this tactic and restore prior model values"
+                                                >
+                                                    <Undo2 className="h-3 w-3 mr-1" />
+                                                    Unapply
+                                                </Button>
+                                            </div>
                                         ) : (
                                             <Button
                                                 type="button"

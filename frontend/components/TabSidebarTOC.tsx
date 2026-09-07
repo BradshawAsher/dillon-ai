@@ -113,7 +113,7 @@ const TAB_SECTIONS: Partial<Record<WorkspaceTab, TOCSection[]>> = {
         { id: 'synthesis-negotiation', label: 'Negotiation Levers', indent: true },
         { id: 'synthesis-next-step', label: 'Immediate Next Steps & Export' },
         { id: 'synthesis-missing-docs', label: 'Missing Documents', indent: true },
-        { id: 'synthesis-mgmt-questions', label: 'Management Questions', indent: true },
+        { id: 'synthesis-management-questions', label: 'Management Questions', indent: true },
         { id: 'synthesis-cross-doc', label: 'Cross-Document Matrix' },
         { id: 'synthesis-pipeline-metrics', label: 'Extraction Metrics' },
     ],
@@ -207,6 +207,8 @@ export function TabTopNavTOC({ activeTab }: { activeTab: WorkspaceTab }) {
 
     const scrollToSection = (sectionId: string) => {
         const element = document.getElementById(sectionId)
+            || document.querySelector(`[data-anchor-alias="${sectionId}"]`)
+            || (sectionId === 'synthesis-mgmt-questions' ? document.getElementById('synthesis-management-questions') : null)
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'start' })
             setActiveSection(sectionId)
@@ -394,6 +396,8 @@ export default function TabSidebarTOC({
 
     const scrollToSection = useCallback((sectionId: string) => {
         const el = document.getElementById(sectionId)
+            || document.querySelector(`[data-anchor-alias="${sectionId}"]`)
+            || (sectionId === 'synthesis-mgmt-questions' ? document.getElementById('synthesis-management-questions') : null)
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'start' })
             setActiveSection(sectionId)

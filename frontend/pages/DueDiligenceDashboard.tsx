@@ -68,7 +68,7 @@ import { WorkspaceHeader } from '../components/views/WorkspaceHeader'
 import { AccountWorkspaceView } from '../components/views/AccountWorkspaceView'
 import { useDealWorkspaceState, type WorkspaceTab } from '../hooks/useDealWorkspaceState'
 import { useSupabaseRealtimeDiligence } from '../hooks/backend/useSupabaseRealtimeDiligence'
-import { parseUrlDeepLinkState, matchProjectFromQuery, syncBrowserUrl } from '../utils/deepLinking'
+import { parseUrlDeepLinkState, matchProjectFromQuery, syncBrowserUrl, scrollToAnchorWithRetry } from '../utils/deepLinking'
 import DealWorkspaceNav from '../components/DealWorkspaceNav'
 import TabSidebarTOC from '../components/TabSidebarTOC'
 import SectionHeader from '../components/SectionHeader'
@@ -5084,7 +5084,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                                 }}
                                 onSwitchTab={setActiveWorkspaceTab}
                             />
-                            <div id="synthesis-management-questions" className="scroll-mt-6">
+                            <div id="synthesis-management-questions" data-anchor-alias="synthesis-mgmt-questions" className="scroll-mt-6">
                                 <ManagementQuestionTracker
                                     projectId={activeProjectId}
                                     suggestedQuestions={activeProjectSynthesis?.openQuestions ?? []}
@@ -5432,12 +5432,7 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                         }
                         setActiveWorkspaceTab(tab)
                         if (anchorId) {
-                            setTimeout(() => {
-                                const el = document.getElementById(anchorId)
-                                if (el) {
-                                    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                                }
-                            }, 120)
+                            scrollToAnchorWithRetry(anchorId)
                         }
                     }}
                     onOpenVersionSwitcher={() => setIsVersionSwitcherOpen(true)}

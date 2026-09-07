@@ -5,11 +5,12 @@ type Props = {
     text: string
     maxLength?: number
     bulletColor?: string
+    defaultExpanded?: boolean
     onClick?: () => void
 }
 
-export default function TruncatedListItem({ text, maxLength = 80, bulletColor = 'bg-muted-foreground', onClick }: Props) {
-    const [expanded, setExpanded] = useState(false)
+export default function TruncatedListItem({ text, maxLength = 80, bulletColor = 'bg-muted-foreground', defaultExpanded = false, onClick }: Props) {
+    const [expanded, setExpanded] = useState(defaultExpanded)
     const isLong = text.length > maxLength
 
     const shortText = isLong ? text.slice(0, maxLength).replace(/\s\S*$/, '') + '…' : text

@@ -278,6 +278,30 @@ describe('isFactReconciled live reconciliation keys', () => {
     it('does not treat an EBITDA margin calculation as EBITDA reconciliation', () => {
         expect(isFactReconciled('ebitda_sde', confirmedFact, [withMetric('ebitda_margin', 'ebitda_sde')])).toBe(false)
     })
+
+    it('falls back to other project documents when primary cited document lacks reconciliation JSON', () => {
+        const factCitingLoi = {
+            value: 100,
+            status: 'confirmed',
+            citations: [{ source_file: 'loi_agreement.pdf' }],
+        }
+        const documents: SubmissionHistoryItem[] = [
+            { fileName: 'loi_agreement.pdf', reconciliationJson: '' } as SubmissionHistoryItem,
+            withMetric('gross_profit_check', 'revenue'),
+        ]
+        expect(isFactReconciled('revenue', factCitingLoi, documents)).toBe(true)
+    })
+
+    it('returns Confirmed & Verified when fact has 2 or more citations', () => {
+        expect(getEvidenceStatusPresentation('confirmed', 'Documented', false, 2)).toEqual({
+            label: 'Confirmed & Verified',
+            variant: 'success',
+        })
+        expect(getEvidenceStatusPresentation('confirmed', 'Documented', false, 1)).toEqual({
+            label: 'Confirmed',
+            variant: 'success',
+        })
+    })
 })
 
 describe('formatEvidenceConfidence', () => {

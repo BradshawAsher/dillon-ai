@@ -159,7 +159,7 @@ export default function LeverageSafetyCard({ model }: Props) {
                             <p className="text-[10px] text-muted-foreground">Current DSCR</p>
                             <DataOriginBadge
                                 origin="calculated"
-                                label="DSCR"
+                                label="Calculated (DSCR)"
                                 metricLabel="Current Debt-Service Coverage (DSCR)"
                                 metricValue={`${data.currentDscr.toFixed(2)}x`}
                                 formula="operating cash flow ÷ annual debt service"
@@ -176,7 +176,7 @@ export default function LeverageSafetyCard({ model }: Props) {
                             <p className="text-[10px] text-muted-foreground">Debt/EBITDA</p>
                             <DataOriginBadge
                                 origin="calculated"
-                                label="Leverage"
+                                label="Calculated (Leverage)"
                                 metricLabel="Debt / EBITDA Leverage Ratio"
                                 metricValue={`${data.currentLeverage.toFixed(1)}x`}
                                 formula="senior debt ÷ confirmed EBITDA/SDE"
@@ -193,7 +193,7 @@ export default function LeverageSafetyCard({ model }: Props) {
                             <p className="text-[10px] text-muted-foreground">SBA Default Cushion</p>
                             <DataOriginBadge
                                 origin="calculated"
-                                label="Cushion"
+                                label="Calculated (Cushion)"
                                 metricLabel="SBA Default Cushion"
                                 metricValue={`${data.breakpointPct}%`}
                                 formula="percentage drop in EBITDA before DSCR reaches 1.0x"

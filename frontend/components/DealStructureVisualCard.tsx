@@ -82,21 +82,21 @@ export default function DealStructureVisualCard({ model, onOpenEvidence }: { mod
                     <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
                         <div className="flex items-center justify-between gap-1">
                             <p className="text-xs text-muted-foreground">Total acquisition uses</p>
-                            <DataOriginBadge origin="calculated" label="Total Uses" formula="price + fees + working capital" compact />
+                            <DataOriginBadge origin="calculated" label="Calculated (Total Uses)" formula="price + fees + working capital" compact />
                         </div>
                         <p className="mt-1 text-lg font-bold">{money(uses)}</p>
                     </div>
                     <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
                         <div className="flex items-center justify-between gap-1">
                             <p className="text-xs text-muted-foreground">Buyer equity at close</p>
-                            <DataOriginBadge origin={model.equityContributionPercent ? "user_entered" : "benchmark"} label={model.equityContributionPercent ? "Saved Equity %" : "30% Benchmark"} compact />
+                            <DataOriginBadge origin={model.equityContributionPercent ? "user_entered" : "benchmark"} label={model.equityContributionPercent ? "User Input (Saved Equity %)" : "Benchmark (30% Equity)"} compact />
                         </div>
                         <p className="mt-1 text-lg font-bold">{money(equity)}</p>
                     </div>
                     <div className="rounded-lg border border-primary/25 bg-background/90 p-3">
                         <div className="flex items-center justify-between gap-1">
                             <p className="text-xs text-muted-foreground">Senior debt funding</p>
-                            <DataOriginBadge origin="calculated" label="Debt Plug" formula="uses − equity − seller note" compact />
+                            <DataOriginBadge origin="calculated" label="Calculated (Senior Debt)" formula="uses − equity − seller note" compact />
                         </div>
                         <p className="mt-1 text-lg font-bold">{uses > 0 ? `${((seniorDebt / uses) * 100).toFixed(0)}%` : '—'}</p>
                     </div>
@@ -128,7 +128,7 @@ export default function DealStructureVisualCard({ model, onOpenEvidence }: { mod
                             <p className="text-xs text-muted-foreground font-medium">{isIllustrativePreview ? 'Illustrative equity' : 'Buyer equity'}</p>
                             <DataOriginBadge
                                 origin={model.equityContributionPercent ? "user_entered" : "benchmark"}
-                                label={model.equityContributionPercent ? "Saved Equity %" : "30% Benchmark"}
+                                label={model.equityContributionPercent ? "User Input (Saved Equity %)" : "Benchmark (30% Equity)"}
                                 metricLabel="Buyer equity"
                                 metricValue={money(equity)}
                                 formula="total uses × equity contribution %"
@@ -144,7 +144,7 @@ export default function DealStructureVisualCard({ model, onOpenEvidence }: { mod
                             <p className="text-xs text-muted-foreground font-medium">{isIllustrativePreview ? 'Illustrative senior debt' : 'Senior debt'}</p>
                             <DataOriginBadge
                                 origin="calculated"
-                                label="Debt Plug"
+                                label="Calculated (Senior Debt)"
                                 metricLabel="Senior debt"
                                 metricValue={money(seniorDebt)}
                                 formula="total uses − buyer equity − seller note"
@@ -170,7 +170,7 @@ export default function DealStructureVisualCard({ model, onOpenEvidence }: { mod
                                 <p className="text-xs text-muted-foreground font-medium">Debt funding</p>
                                 <DataOriginBadge
                                     origin="calculated"
-                                    label="Debt %"
+                                    label="Calculated (Debt %)"
                                     metricLabel="Debt funding %"
                                     metricValue={uses > 0 ? `${((seniorDebt / uses) * 100).toFixed(0)}%` : '—'}
                                     formula="senior debt ÷ total uses"
@@ -202,7 +202,7 @@ export default function DealStructureVisualCard({ model, onOpenEvidence }: { mod
                                 <p className="text-xs text-muted-foreground font-medium">Debt-service coverage</p>
                                 <DataOriginBadge
                                     origin="calculated"
-                                    label="Coverage Ratio"
+                                    label="Calculated (DSCR)"
                                     metricLabel="Debt-service coverage (DSCR)"
                                     metricValue={dscr === null ? 'Needs EBITDA' : `${dscr.toFixed(2)}x`}
                                     formula="operating cash flow ÷ annual debt service"
@@ -216,7 +216,7 @@ export default function DealStructureVisualCard({ model, onOpenEvidence }: { mod
                     </div>
                     {dscr !== null && dscr < 1.25 ? <p className="mt-3 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">Downside resilience is thin: DSCR is below 1.25×. Consider lower leverage, more equity, a seller note, or revised terms.</p> : leverage !== null && leverage > 5 ? <p className="mt-3 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">Leverage is above 5.0× confirmed EBITDA/SDE. Review cash-flow downside and lender constraints before relying on this structure.</p> : null}
                 </div>
-                <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold">Starting assumptions</p><Badge variant={isIllustrativePreview ? 'warning' : 'secondary'}>{isIllustrativePreview ? 'Preview values' : 'Saved inputs'}</Badge></div><p className="mt-1 text-xs text-muted-foreground">You can still inspect the calculation even when some starting assumptions are missing; preview values are shown explicitly and should not be treated as confirmed deal terms.</p><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Purchase price</p><DataOriginBadge origin={savedPrice ? "user_entered" : "assumption"} compact /></div><p className="text-sm font-medium">{money(price)}</p></div><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Transaction fees</p><DataOriginBadge origin={model.transactionFees ? "user_entered" : "assumption"} compact /></div><p className="text-sm font-medium">{money(fees)}</p></div><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Working capital</p><DataOriginBadge origin={model.workingCapitalRequirement ? "user_entered" : "assumption"} compact /></div><p className="text-sm font-medium">{money(workingCapital)}</p></div><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Equity contribution</p><DataOriginBadge origin={model.equityContributionPercent ? "user_entered" : "benchmark"} compact /></div><p className="text-sm font-medium">{(equityPercent * 100).toFixed(0)}%</p></div><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Seller note</p><DataOriginBadge origin={model.sellerNoteAmount ? "user_entered" : "assumption"} compact /></div><p className="text-sm font-medium">{money(sellerNote)}</p></div></div></div>
+                <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold">Starting assumptions</p><Badge variant={isIllustrativePreview ? 'warning' : 'secondary'}>{isIllustrativePreview ? 'Preview values' : 'Saved inputs'}</Badge></div><p className="mt-1 text-xs text-muted-foreground">You can still inspect the calculation even when some starting assumptions are missing; preview values are shown explicitly and should not be treated as confirmed deal terms.</p><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Purchase price</p><DataOriginBadge origin={savedPrice !== null && savedPrice !== undefined ? "user_entered" : "assumption"} compact /></div><p className="text-sm font-medium">{money(price)}</p></div><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Transaction fees</p><DataOriginBadge origin={model.transactionFees !== null && model.transactionFees !== undefined ? "user_entered" : "assumption"} compact /></div><p className="text-sm font-medium">{money(fees)}</p></div><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Working capital</p><DataOriginBadge origin={model.workingCapitalRequirement !== null && model.workingCapitalRequirement !== undefined ? "user_entered" : "assumption"} compact /></div><p className="text-sm font-medium">{money(workingCapital)}</p></div><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Equity contribution</p><DataOriginBadge origin={model.equityContributionPercent !== null && model.equityContributionPercent !== undefined ? "user_entered" : "benchmark"} compact /></div><p className="text-sm font-medium">{(equityPercent * 100).toFixed(0)}%</p></div><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Seller note</p><DataOriginBadge origin={model.sellerNoteAmount !== null && model.sellerNoteAmount !== undefined ? "user_entered" : "assumption"} compact /></div><p className="text-sm font-medium">{money(sellerNote)}</p></div></div></div>
                 <div className="grid gap-4 xl:grid-cols-2"><MoneyBarChart title="Uses" description="Purchase price plus transaction fees and working-capital funding needs." data={usesData} /><MoneyBarChart title="Sources" description="Funding mix: senior debt, equity, and any seller note. Sources reconcile to uses." data={sourcesData} /></div>
                 {onOpenEvidence ? <button type="button" onClick={() => onOpenEvidence(capitalStackEvidence)} className="text-xs font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">How this was calculated</button> : null}
             </>

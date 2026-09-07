@@ -33,8 +33,13 @@ function formatFact(value: number | undefined, currency?: string) {
 export default function DealModelReadinessCard({ model, documents, onOpenEvidence }: { model: DealModel; documents: SubmissionHistoryItem[]; onOpenEvidence: (evidence: EvidenceItem) => void }) {
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const reconciledCount = factLabels.filter(([key]) => isFactReconciled(key, facts[key], documents)).length
+    const verifiedCount = factLabels.filter(([key]) => {
+        if (isFactReconciled(key, facts[key], documents)) return false
+        const f = facts[key]
+        return f?.status === 'confirmed' && typeof f?.value === 'number' && (f?.citations?.length ?? 0) >= 2
+    }).length
     const confirmedCount = factLabels.filter(([key]) => facts[key]?.status === 'confirmed' && typeof facts[key]?.value === 'number').length
-    const documentedOnlyCount = Math.max(0, confirmedCount - reconciledCount)
+    const documentedOnlyCount = Math.max(0, confirmedCount - reconciledCount - verifiedCount)
     const assumptionsSet = assumptionLabels.filter(([key]) => model[key] !== null && model[key] !== undefined).length
 
     return (
@@ -50,6 +55,12 @@ export default function DealModelReadinessCard({ model, documents, onOpenEvidenc
                             <Badge variant="success" className="gap-1 font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
                                 <ShieldCheck className="h-3 w-3" />
                                 {reconciledCount} Confirmed &amp; Reconciled
+                            </Badge>
+                        )}
+                        {verifiedCount > 0 && (
+                            <Badge variant="success" className="gap-1 font-bold bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30">
+                                <CheckCircle2 className="h-3 w-3" />
+                                {verifiedCount} Confirmed &amp; Verified
                             </Badge>
                         )}
                         <Badge variant={documentedOnlyCount > 0 ? 'secondary' : 'outline'}>
@@ -72,8 +83,10 @@ export default function DealModelReadinessCard({ model, documents, onOpenEvidenc
                         {factLabels.map(([key, label]) => {
                             const fact = facts[key]
                             const isReconciled = isFactReconciled(key, fact, documents)
+                            const citationCount = fact?.citations?.length ?? 0
+                            const isVerified = !isReconciled && citationCount >= 2 && fact?.status === 'confirmed'
                             const confirmed = fact?.status === 'confirmed' && typeof fact.value === 'number'
-                            const status = getEvidenceStatusPresentation(fact?.status, fact?.provenance, isReconciled)
+                            const status = getEvidenceStatusPresentation(fact?.status, fact?.provenance, isReconciled, citationCount)
                             return (
                                 <button
                                     key={key}
@@ -82,7 +95,11 @@ export default function DealModelReadinessCard({ model, documents, onOpenEvidenc
                                     onClick={() => onOpenEvidence(buildFactEvidence({ field: key, title: `${label} evidence`, facts, documents }))}
                                     className={cn(
                                         "rounded-lg border p-3 text-left transition-colors enabled:hover:border-primary/40 disabled:cursor-default",
-                                        isReconciled ? "border-emerald-500/30 bg-emerald-500/[0.03]" : "border-border bg-background"
+                                        isReconciled
+                                            ? "border-emerald-500/30 bg-emerald-500/[0.03]"
+                                            : isVerified
+                                                ? "border-sky-500/30 bg-sky-500/[0.03]"
+                                                : "border-border bg-background"
                                     )}
                                 >
                                     <div className="flex items-center justify-between gap-2">
@@ -90,6 +107,10 @@ export default function DealModelReadinessCard({ model, documents, onOpenEvidenc
                                         {isReconciled ? (
                                             <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400" title="Double-verified by document citation and deterministic math reconciliation">
                                                 <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                            </span>
+                                        ) : isVerified ? (
+                                            <span className="flex items-center gap-1 text-[10px] font-bold text-sky-600 dark:text-sky-400" title="Independently verified across 2+ documents">
+                                                <CheckCircle2 className="h-4 w-4 text-sky-600 dark:text-sky-400" />
                                             </span>
                                         ) : confirmed ? (
                                             <CheckCircle2 className="h-4 w-4 text-primary" />
@@ -100,10 +121,22 @@ export default function DealModelReadinessCard({ model, documents, onOpenEvidenc
                                     <p className="mt-2 text-sm font-semibold text-foreground">{formatFact(fact?.value, fact?.currency)}</p>
                                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                                         <Badge
-                                            variant={isReconciled ? 'success' : status.variant}
-                                            className={isReconciled ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[10px] font-bold" : undefined}
+                                            variant={isReconciled || isVerified ? 'success' : status.variant}
+                                            className={
+                                                isReconciled
+                                                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[10px] font-bold"
+                                                    : isVerified
+                                                        ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30 text-[10px] font-bold"
+                                                        : undefined
+                                            }
                                         >
-                                            {isReconciled ? '✓ Confirmed & Reconciled' : status.label}
+                                            {isReconciled
+                                                ? '✓ Confirmed & Reconciled'
+                                                : isVerified
+                                                    ? '✓ Confirmed & Verified'
+                                                    : confirmed
+                                                        ? 'Document Confirmed'
+                                                        : status.label}
                                         </Badge>
                                         <span className="text-xs text-muted-foreground">
                                             {confirmed ? `${fact.period || 'Period missing'} · View evidence` : fact?.status || 'Not documented'}

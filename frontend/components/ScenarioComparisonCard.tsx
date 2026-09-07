@@ -75,7 +75,7 @@ export default function ScenarioComparisonCard({ model, documents = [], onOpenEv
                         <p className="font-semibold text-foreground">{name}</p>
                         <DataOriginBadge
                             origin="assumption"
-                            label="Scenario Model"
+                            label={`Assumption (${name})`}
                             metricLabel={`${name} Scenario Model`}
                             description={`Assumes ${((growth ?? 0) * 100).toFixed(1)}% annual revenue growth and ${((margin ?? 0) * 100).toFixed(1)}% EBITDA margin.`}
                             compact
@@ -96,7 +96,7 @@ export default function ScenarioComparisonCard({ model, documents = [], onOpenEv
                     <span>Year {years} revenue / EBITDA</span>
                     <DataOriginBadge
                         origin="calculated"
-                        label="Projected"
+                        label="Calculated (Projected)"
                         metricLabel={`Year ${years} Revenue / EBITDA (${name})`}
                         metricValue={`${money(exitRevenue, currency)} / ${money(exitEbitda, currency)}`}
                         formula={`Revenue × (1 + ${((growth ?? 0) * 100).toFixed(1)}%)^${years}; EBITDA = Revenue × ${((margin ?? 0) * 100).toFixed(1)}%`}
@@ -109,7 +109,7 @@ export default function ScenarioComparisonCard({ model, documents = [], onOpenEv
                     <span>Net exit value</span>
                     <DataOriginBadge
                         origin="calculated"
-                        label="Exit Value"
+                        label="Calculated (Exit Value)"
                         metricLabel={`Net exit value (${name})`}
                         metricValue={money(netExitValue, currency)}
                         formula={`Year-${years} EBITDA × ${multiple}x exit multiple − exit costs`}
@@ -126,7 +126,7 @@ export default function ScenarioComparisonCard({ model, documents = [], onOpenEv
                             <span>All-cash MOIC / IRR</span>
                             <DataOriginBadge
                                 origin="calculated"
-                                label="Returns"
+                                label="Calculated (MOIC / IRR)"
                                 metricLabel={`All-cash MOIC / IRR (${name})`}
                                 metricValue={`${totalMoic?.toFixed(2) ?? '—'}x / ${irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}`}
                                 formula="IRR(all-cash timeline), MOIC(total inflows ÷ initial investment)"

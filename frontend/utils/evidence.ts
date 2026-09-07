@@ -166,7 +166,7 @@ export function findCitedDocument(sourceFile: string | undefined, documents: Sub
 }
 
 export type EvidenceStatusPresentation = {
-    label: 'Confirmed' | 'Confirmed & Reconciled' | 'Estimated' | 'Contradicted' | 'Illustrative' | 'Calculated' | 'Synthesized' | 'Needs review'
+    label: 'Confirmed' | 'Confirmed & Reconciled' | 'Confirmed & Verified' | 'Estimated' | 'Contradicted' | 'Illustrative' | 'Calculated' | 'Synthesized' | 'Needs review'
     variant: 'success' | 'warning' | 'destructive' | 'secondary' | 'outline'
 }
 
@@ -225,11 +225,19 @@ export function getProvenanceCategoryPresentation(args: {
 }
 
 /** One status vocabulary for facts, findings, and calculated metrics. */
-export function getEvidenceStatusPresentation(status?: string, provenance?: string, isReconciled?: boolean): EvidenceStatusPresentation {
+export function getEvidenceStatusPresentation(
+    status?: string,
+    provenance?: string,
+    isReconciled?: boolean,
+    citationCount?: number
+): EvidenceStatusPresentation {
     const normalized = `${status ?? ''} ${provenance ?? ''}`.trim().toLowerCase()
     if (/contradict|conflict/.test(normalized)) return { label: 'Contradicted', variant: 'destructive' }
     if (/reconcil|double-verif|forensic/.test(normalized) || isReconciled) {
         return { label: 'Confirmed & Reconciled', variant: 'success' }
+    }
+    if ((citationCount && citationCount >= 2) || /multi-verif|cross-doc|cross-verified/.test(normalized)) {
+        return { label: 'Confirmed & Verified', variant: 'success' }
     }
     if (/illustrative|assum/.test(normalized)) return { label: 'Illustrative', variant: 'warning' }
     if (/estimate/.test(normalized)) return { label: 'Estimated', variant: 'warning' }
@@ -254,37 +262,36 @@ export function isFactReconciled(
     if (fact.isReconciled || /reconcil|double-verif|forensic/.test((fact.provenance || '').toLowerCase())) return true
 
     if (!documents || documents.length === 0) return false
-    const citedSource = fact.citations?.[0]?.source_file || fact.source_document
-    const citedDocument = citedSource ? findCitedDocument(citedSource, documents) : undefined
-    for (const doc of documents) {
-        if (citedDocument && doc !== citedDocument) continue
-        if (!doc.reconciliationJson) continue
+
+    const candidateKeys: Record<string, string[]> = {
+        // These names match the live per-document reconciliation
+        // payload. A ratio such as EBITDA margin is deliberately not
+        // evidence that the EBITDA input itself reconciled.
+        revenue: ['gross_profit_check'],
+        cogs: ['gross_profit_check'],
+        gross_profit: ['gross_profit_check'],
+        operating_expenses: ['operating_income_check'],
+        operating_income: ['operating_income_check'],
+        total_assets: ['balance_sheet_check'],
+        total_liabilities: ['balance_sheet_check'],
+        equity: ['balance_sheet_check'],
+        current_assets: ['working_capital_check'],
+        current_liabilities: ['working_capital_check'],
+        working_capital: ['working_capital_check'],
+    }
+    const matchingKeys = candidateKeys[key] || [key]
+    const reconciliationInputKeys: Record<string, string[]> = {
+        gross_profit: ['reported_gross_profit', 'gross_profit'],
+        operating_income: ['reported_operating_income', 'operating_income'],
+        working_capital: ['reported_working_capital', 'working_capital'],
+    }
+
+    const checkDocReconciliation = (doc: SubmissionHistoryItem): boolean => {
+        if (!doc.reconciliationJson) return false
         try {
             const recon = typeof doc.reconciliationJson === 'string' ? JSON.parse(doc.reconciliationJson) : doc.reconciliationJson
             const metrics = recon?.metrics
-            if (!metrics) continue
-            const candidateKeys: Record<string, string[]> = {
-                // These names match the live per-document reconciliation
-                // payload. A ratio such as EBITDA margin is deliberately not
-                // evidence that the EBITDA input itself reconciled.
-                revenue: ['gross_profit_check'],
-                cogs: ['gross_profit_check'],
-                gross_profit: ['gross_profit_check'],
-                operating_expenses: ['operating_income_check'],
-                operating_income: ['operating_income_check'],
-                total_assets: ['balance_sheet_check'],
-                total_liabilities: ['balance_sheet_check'],
-                equity: ['balance_sheet_check'],
-                current_assets: ['working_capital_check'],
-                current_liabilities: ['working_capital_check'],
-                working_capital: ['working_capital_check'],
-            }
-            const matchingKeys = candidateKeys[key] || [key]
-            const reconciliationInputKeys: Record<string, string[]> = {
-                gross_profit: ['reported_gross_profit', 'gross_profit'],
-                operating_income: ['reported_operating_income', 'operating_income'],
-                working_capital: ['reported_working_capital', 'working_capital'],
-            }
+            if (!metrics) return false
             for (const mk of matchingKeys) {
                 const metric = metrics[mk]
                 if (metric?.withinTolerance !== true || !metric.inputs || typeof metric.inputs !== 'object') continue
@@ -296,7 +303,22 @@ export function isFactReconciled(
                 }
             }
         } catch { }
+        return false
     }
+
+    // First check the directly cited document if one was identified
+    const citedSource = fact.citations?.[0]?.source_file || fact.source_document
+    const citedDocument = citedSource ? findCitedDocument(citedSource, documents) : undefined
+    if (citedDocument && checkDocReconciliation(citedDocument)) {
+        return true
+    }
+
+    // If cited document didn't have/pass the arithmetic check, inspect all other project documents
+    for (const doc of documents) {
+        if (citedDocument && doc === citedDocument) continue
+        if (checkDocReconciliation(doc)) return true
+    }
+
     return false
 }
 
@@ -310,6 +332,8 @@ export function buildFactEvidence(args: {
     const fact = args.facts[args.field]
     const citation = fact?.citations?.[0]
     const isReconciled = isFactReconciled(args.field, fact, args.documents)
+    const citationCount = fact?.citations?.length ?? 0
+    const isVerified = !isReconciled && citationCount >= 2 && fact?.status === 'confirmed'
 
     let sourceFile = citation?.source_file
     if (!sourceFile && args.documents.length > 0) {
@@ -325,10 +349,16 @@ export function buildFactEvidence(args: {
         }
     }
 
-    const effectiveStatus = isReconciled ? 'Confirmed & Reconciled' : fact?.status
+    const effectiveStatus = isReconciled
+        ? 'Confirmed & Reconciled'
+        : isVerified
+            ? 'Confirmed & Verified'
+            : fact?.status
     const effectiveProvenance = isReconciled
         ? (fact?.provenance ? `${fact.provenance} (Reconciled)` : 'Documented & Deterministically Reconciled')
-        : (fact?.provenance || 'Documented')
+        : isVerified
+            ? (fact?.provenance ? `${fact.provenance} (Cross-Verified)` : 'Documented & Cross-Document Verified')
+            : (fact?.provenance || 'Documented')
 
     return buildDocumentLinkedEvidence({
         title: args.title,

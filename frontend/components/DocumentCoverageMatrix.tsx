@@ -23,20 +23,32 @@ const EXPECTED_CATEGORIES = [
 
 function matchesCategory(doc: SubmissionHistoryItem, categoryKey: string): boolean {
     const docType = (doc.detectedDocumentType || doc.documentType || '').toLowerCase()
-    const allTypes = doc.detectedDocumentTypesJson ? (JSON.parse(doc.detectedDocumentTypesJson) as string[]).join(' ').toLowerCase() : ''
-    const combined = `${docType} ${allTypes} ${doc.fileName.toLowerCase()}`
+    let allTypes = ''
+    try {
+        if (doc.detectedDocumentTypesJson) {
+            const parsed = JSON.parse(doc.detectedDocumentTypesJson)
+            if (Array.isArray(parsed)) {
+                allTypes = parsed.join(' ').toLowerCase()
+            } else if (typeof parsed === 'string') {
+                allTypes = parsed.toLowerCase()
+            }
+        }
+    } catch {
+        allTypes = (doc.detectedDocumentTypesJson || '').toLowerCase()
+    }
+    const combined = `${docType} ${allTypes} ${(doc.fileName || '').toLowerCase()}`
 
     switch (categoryKey) {
-        case 'income_statement': return combined.includes('income') || combined.includes('p&l') || combined.includes('profit') || combined.includes('loss') || combined.includes('revenue')
-        case 'balance_sheet': return combined.includes('balance') || combined.includes('asset') || combined.includes('liabilit')
-        case 'cash_flow': return combined.includes('cash flow') || combined.includes('cashflow')
-        case 'tax_return': return combined.includes('tax') || combined.includes('1120') || combined.includes('schedule')
-        case 'accounts_receivable': return combined.includes('receivable') || combined.includes('aging') || combined.includes('ar ')
-        case 'customer_list': return combined.includes('customer') || combined.includes('client') || combined.includes('contract')
-        case 'employee': return combined.includes('employee') || combined.includes('payroll') || combined.includes('staff') || combined.includes('team')
-        case 'lease': return combined.includes('lease') || combined.includes('real estate') || combined.includes('property')
-        case 'legal': return combined.includes('legal') || combined.includes('compliance') || combined.includes('litigation') || combined.includes('regulatory')
-        case 'operational': return combined.includes('operational') || combined.includes('kpi') || combined.includes('metric')
+        case 'income_statement': return combined.includes('income') || combined.includes('p&l') || combined.includes('pnl') || combined.includes('profit') || combined.includes('loss') || combined.includes('revenue') || combined.includes('financial_statement')
+        case 'balance_sheet': return combined.includes('balance') || combined.includes('asset') || combined.includes('liabilit') || combined.includes('trial')
+        case 'cash_flow': return combined.includes('cash flow') || combined.includes('cashflow') || combined.includes('statement of cash')
+        case 'tax_return': return combined.includes('tax') || combined.includes('1120') || combined.includes('1065') || combined.includes('schedule')
+        case 'accounts_receivable': return combined.includes('receivable') || combined.includes('aging') || combined.includes('ar_') || combined.includes('ar-') || combined.includes('ar ') || combined.includes('a/r')
+        case 'customer_list': return combined.includes('customer') || combined.includes('client') || combined.includes('contract') || combined.includes('invoice')
+        case 'employee': return combined.includes('employee') || combined.includes('payroll') || combined.includes('staff') || combined.includes('team') || combined.includes('headcount')
+        case 'lease': return combined.includes('lease') || combined.includes('real estate') || combined.includes('property') || combined.includes('rent')
+        case 'legal': return combined.includes('legal') || combined.includes('compliance') || combined.includes('litigation') || combined.includes('regulatory') || combined.includes('agreement') || combined.includes('loi')
+        case 'operational': return combined.includes('operational') || combined.includes('kpi') || combined.includes('metric') || combined.includes('inventory') || combined.includes('vendor')
         default: return false
     }
 }

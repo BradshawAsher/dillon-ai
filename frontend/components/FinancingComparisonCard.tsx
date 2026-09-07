@@ -100,7 +100,7 @@ export default function FinancingComparisonCard({ model }: Props) {
                                     <p className="text-xs font-semibold text-foreground">{opt.label}</p>
                                     <DataOriginBadge
                                         origin="assumption"
-                                        label={opt.label}
+                                        label={`Assumption (${opt.label})`}
                                         metricLabel={`${opt.label} Capital Structure`}
                                         metricValue={`Equity: ${fmt(opt.equity)} · Debt: ${fmt(opt.debt)}`}
                                         description={`Capital structure allocation with ${((opt.equity / data.price) * 100).toFixed(0)}% equity, ${((opt.debt / data.price) * 100).toFixed(0)}% senior debt, and ${((opt.sellerNote / data.price) * 100).toFixed(0)}% seller financing.`}

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowDownToLine, Scale } from 'lucide-react'
+import { ArrowDownToLine, Bot, Scale } from 'lucide-react'
 
 import type { ProjectSynthesisItem } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
+import { Button } from '../lib/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 import { Input } from '../lib/shadcn/input'
@@ -103,6 +104,41 @@ export default function ValuationImpactBridge({ synthesis, baseValue, documents 
 
     const currency = synthesis?.valuationCurrency || 'USD'
 
+    const handleAskAiToAnalyze = () => {
+        const projectName = (typeof window !== 'undefined' && (window as any).__mergeworks_active_project_name) || 'this deal'
+        const baseFormatted = baseValue === null ? 'Pending' : formatCurrencyValue(String(baseValue), currency)
+        const adjFormatted = adjustmentTotal === 0 ? '$0' : `-${formatCurrencyValue(String(adjustmentTotal), currency)}`
+        const adjustedBaseFormatted = adjustedBase === null ? 'Pending' : formatCurrencyValue(String(adjustedBase), currency)
+
+        const bridgeBreakdown = items.map((item, idx) => {
+            const amt = item.amount?.trim() ? `$${item.amount.replace(/[$,\s]/g, '')}` : '$0 (unassigned)'
+            return `${idx + 1}. [${item.mechanism}] Finding: "${item.finding}" -> Adjustment Amount: ${amt}`
+        }).join('\n')
+
+        const promptText = `Here is the current Evidence-Linked Value Bridge for ${projectName}:
+
+Base Enterprise Value: ${baseFormatted}
+Total Diligence Adjustments: ${adjFormatted}
+Illustrative Adjusted Value: ${adjustedBaseFormatted}
+
+Diligence Bridge Items:
+${bridgeBreakdown || 'None entered'}
+
+Please perform an adversarial valuation and deal-structuring review:
+1. Are the proposed dollar adjustments commercially justified given the severity of the underlying evidence findings?
+2. Assess whether each chosen mechanism (Price reduction vs. Seller note vs. Escrow holdback vs. Earn-out) is legally optimal to protect the buyer.
+3. Recommend specific wording for LOI Section 2.3 (Purchase Price Adjustment) and Section 8.2 (Special Indemnity Escrow) to enforce these bridges at closing.`
+
+        window.dispatchEvent(
+            new CustomEvent('mergeworks:open-chat-ask', {
+                detail: {
+                    question: promptText,
+                    topic: 'Valuation Bridge Analysis',
+                },
+            })
+        )
+    }
+
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80">
@@ -198,15 +234,26 @@ export default function ValuationImpactBridge({ synthesis, baseValue, documents 
                                 <p className="mt-1 text-lg font-semibold text-foreground">{adjustedBase === null ? 'Pending' : formatCurrencyValue(String(adjustedBase), currency)}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                             <button
                                 type="button"
                                 disabled={saving}
                                 onClick={handleSaveBridge}
-                                className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-white"
+                                className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
                             >
                                 {saving ? 'Saving…' : 'Save bridge to Deal Model'}
                             </button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handleAskAiToAnalyze}
+                                className="gap-1.5 text-xs font-semibold text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 cursor-pointer"
+                                title="Ask AI to analyze this value bridge, mechanism choices, and deal terms impact"
+                            >
+                                <Bot className="h-3.5 w-3.5" />
+                                <span>Ask AI to Analyze Bridge</span>
+                            </Button>
                             {saveError ? <p className="text-sm text-destructive">{saveError}</p> : null}
                         </div>
                     </>

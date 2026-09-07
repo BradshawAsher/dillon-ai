@@ -401,7 +401,36 @@ export default function DealOverviewCard({ syntheses, projects, currentProjectId
 
                 <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-4">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold">Decision metrics</p><p className="mt-1 text-xs text-muted-foreground">Formula and provenance are visible for every metric; unavailable means its required evidence or assumptions are not ready.</p></div><Badge variant="outline">Evidence-backed</Badge></div>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{kpis.map((kpi) => <button type="button" key={kpi.label} title={`View evidence: ${kpi.detail}`} onClick={() => onOpenEvidence(kpi.evidence)} className="rounded-lg border border-border bg-background p-3 text-left transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><p className="text-xs text-muted-foreground">{kpi.label}</p><p className="mt-1 text-lg font-semibold text-foreground">{kpi.value}</p><p className="mt-1 text-xs text-muted-foreground">{kpi.detail}</p><Badge variant={kpi.source === 'Documented' ? 'secondary' : 'outline'} className="mt-2 text-[10px]">{kpi.source} · View evidence</Badge></button>)}</div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {kpis.map((kpi) => {
+                            const isDoc = kpi.source === 'Documented'
+                            const isAssump = kpi.source.toLowerCase().includes('assumption')
+                            const isTelem = kpi.source === 'Telemetry'
+                            const badgeCls = isDoc
+                                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                : isAssump
+                                ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                                : isTelem
+                                ? 'border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-400'
+                                : 'border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-400'
+                            return (
+                                <button
+                                    type="button"
+                                    key={kpi.label}
+                                    title={`View evidence: ${kpi.detail}`}
+                                    onClick={() => onOpenEvidence(kpi.evidence)}
+                                    className="rounded-lg border border-border bg-background p-3 text-left transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                                    <p className="mt-1 text-lg font-semibold text-foreground">{kpi.value}</p>
+                                    <p className="mt-1 text-xs text-muted-foreground">{kpi.detail}</p>
+                                    <Badge variant="outline" className={`mt-2 text-[10px] font-medium ${badgeCls}`}>
+                                        {kpi.source} · View evidence
+                                    </Badge>
+                                </button>
+                            )
+                        })}
+                    </div>
                 </div>
 
                 {!synthesis ? (

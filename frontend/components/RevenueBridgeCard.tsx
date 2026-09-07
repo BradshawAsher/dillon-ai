@@ -36,11 +36,11 @@ export default function RevenueBridgeCard({ model }: Props) {
         const futureRevenue = revenue + volumeGrowth + priceIncreases + newProducts
 
         const result: BridgeItem[] = [
-            { label: 'Current Revenue', value: revenue, color: 'bg-blue-500', isTotal: true, origin: 'extracted', originLabel: 'Reported LTM' },
-            { label: 'Volume Growth', value: volumeGrowth, color: 'bg-emerald-500', origin: 'assumption', originLabel: '60% Volume Proxy', formula: 'Revenue × Growth × Years × 60%' },
-            { label: 'Price Increases', value: priceIncreases, color: 'bg-amber-500', origin: 'assumption', originLabel: '30% Price Proxy', formula: 'Revenue × Growth × Years × 30%' },
-            { label: 'New Products/Services', value: newProducts, color: 'bg-violet-500', origin: 'assumption', originLabel: '10% New Stream', formula: 'Revenue × Growth × Years × 10%' },
-            { label: `${holdYears}-Year Revenue`, value: futureRevenue, color: 'bg-blue-600', isTotal: true, origin: 'calculated', formula: 'Base + Volume + Price + New Products' },
+            { label: 'Current Revenue', value: revenue, color: 'bg-blue-500', isTotal: true, origin: 'extracted', originLabel: 'Extracted (Reported LTM)' },
+            { label: 'Volume Growth', value: volumeGrowth, color: 'bg-emerald-500', origin: 'assumption', originLabel: 'Assumption (60% Volume)', formula: 'Revenue × Growth × Years × 60%' },
+            { label: 'Price Increases', value: priceIncreases, color: 'bg-amber-500', origin: 'assumption', originLabel: 'Assumption (30% Price)', formula: 'Revenue × Growth × Years × 30%' },
+            { label: 'New Products/Services', value: newProducts, color: 'bg-violet-500', origin: 'assumption', originLabel: 'Assumption (10% New Stream)', formula: 'Revenue × Growth × Years × 10%' },
+            { label: `${holdYears}-Year Revenue`, value: futureRevenue, color: 'bg-blue-600', isTotal: true, origin: 'calculated', originLabel: 'Calculated (Projected)', formula: 'Base + Volume + Price + New Products' },
         ]
 
         return result
@@ -61,7 +61,7 @@ export default function RevenueBridgeCard({ model }: Props) {
                     </div>
                     <DataOriginBadge
                         origin="assumption"
-                        label="Growth Attribution Model"
+                        label="Assumption (Growth Attribution)"
                         description="Illustrative underwriting attribution decomposing revenue growth into volume, pricing, and new product assumptions."
                     />
                 </div>

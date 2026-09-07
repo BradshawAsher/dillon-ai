@@ -32,7 +32,7 @@ const IMPROVEMENT_TIPS: Record<string, string> = {
 }
 
 export default function DealGradeCard({ model, synthesis }: Props) {
-    const [showTips, setShowTips] = useState(false)
+    const [showTips, setShowTips] = useState(true)
     const facts = parseDocumentedFacts(model.documentedFactsJson)
     const ebitda = (facts.ebitda_sde?.status === 'confirmed' || facts.ebitda_sde?.status === 'illustrative') && typeof facts.ebitda_sde.value === 'number' ? facts.ebitda_sde.value : null
     const revenue = (facts.revenue?.status === 'confirmed' || facts.revenue?.status === 'illustrative') && typeof facts.revenue.value === 'number' ? facts.revenue.value : null

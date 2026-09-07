@@ -76,7 +76,7 @@ export default function StrengthsWeaknessesCard({ model, synthesis }: Props) {
                         {strengths.length > 0 ? (
                             <ul className="space-y-1.5">
                                 {strengths.slice(0, 5).map((s, i) => (
-                                    <TruncatedListItem key={i} text={s.text} bulletColor="bg-green-500" maxLength={90} />
+                                    <TruncatedListItem key={i} text={s.text} bulletColor="bg-green-500" maxLength={90} defaultExpanded={true} />
                                 ))}
                             </ul>
                         ) : (
@@ -92,7 +92,7 @@ export default function StrengthsWeaknessesCard({ model, synthesis }: Props) {
                         {weaknesses.length > 0 ? (
                             <ul className="space-y-1.5">
                                 {weaknesses.slice(0, 5).map((w, i) => (
-                                    <TruncatedListItem key={i} text={w.text} bulletColor="bg-red-500" maxLength={90} />
+                                    <TruncatedListItem key={i} text={w.text} bulletColor="bg-red-500" maxLength={90} defaultExpanded={true} />
                                 ))}
                             </ul>
                         ) : (

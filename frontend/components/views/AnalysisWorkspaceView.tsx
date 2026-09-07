@@ -34,6 +34,7 @@ import BaseReturnMetricsCard from '../BaseReturnMetricsCard'
 import GrowthSensitivityCard from '../GrowthSensitivityCard'
 import MonteCarloCard from '../MonteCarloCard'
 import BreakevenAnalysisCard from '../BreakevenAnalysisCard'
+import { scrollToAnchorWithRetry } from '../../utils/deepLinking'
 
 type AnalysisSubView = 'all' | 'snapshot' | 'financials'
 
@@ -157,12 +158,7 @@ export function AnalysisWorkspaceView({
                                     } else {
                                         setActiveWorkspaceTab(target)
                                         if (anchorId) {
-                                            setTimeout(() => {
-                                                const el = document.getElementById(anchorId)
-                                                if (el) {
-                                                    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                                                }
-                                            }, 150)
+                                            scrollToAnchorWithRetry(anchorId)
                                         }
                                     }
                                 }}

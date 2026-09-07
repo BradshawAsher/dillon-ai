@@ -100,10 +100,10 @@ export default function DataOriginBadge({
     const coords = useFloatingPosition({
         isOpen: showPopover,
         targetRef: buttonRef,
-        popoverWidth: 280,
+        popoverWidth: 380,
         preferredPlacement: 'top',
-        margin: 6,
-        padding: 12,
+        margin: 8,
+        padding: 16,
     })
 
     const handleMouseEnter = () => {
@@ -168,7 +168,7 @@ export default function DataOriginBadge({
                 onClick={(event) => {
                     event.stopPropagation()
                     onClick?.()
-                    if (!onClick) setShowPopover(true)
+                    if (!onClick) setShowPopover((current) => !current)
                 }}
                 onKeyDown={(event) => { if (event.key === 'Escape') setShowPopover(false) }}
                 aria-expanded={hasDetails ? showPopover : undefined}
@@ -203,47 +203,74 @@ export default function DataOriginBadge({
                         left: coords.left !== undefined ? `${coords.left}px` : undefined,
                         right: coords.right !== undefined ? `${coords.right}px` : undefined,
                         width: coords.width !== undefined ? `${coords.width}px` : undefined,
-                        maxHeight: coords.maxHeight !== undefined ? `${coords.maxHeight}px` : undefined,
+                        maxHeight: coords.maxHeight !== undefined ? `${coords.maxHeight}px` : '80vh',
                         zIndex: 99999,
                     }}
-                    className="overflow-y-auto rounded-lg border border-border bg-popover p-2.5 text-left text-xs text-popover-foreground shadow-xl ring-1 ring-border/50 animate-in fade-in-0 zoom-in-95"
+                    className="overflow-y-auto rounded-xl border border-primary/30 bg-card text-card-foreground p-4 text-left shadow-2xl backdrop-blur-xl ring-1 ring-border/50 animate-in fade-in-0 zoom-in-95 duration-150"
                 >
-                    <div className="flex items-center justify-between gap-1.5 font-bold">
-                        <div className="flex items-center gap-1.5">
-                            <Icon className="h-3.5 w-3.5 text-primary" />
-                            <span>{metricLabel || config.defaultLabel}</span>
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-2 border-b border-border/60 pb-2.5">
+                        <div className="space-y-1">
+                            <span className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${config.badgeClass}`}>
+                                {displayLabel} Data Origin
+                            </span>
+                            <h4 className="text-sm font-bold text-foreground leading-tight flex items-center gap-1.5">
+                                <Icon className="h-4 w-4 text-primary shrink-0" />
+                                <span>{metricLabel || config.defaultLabel}</span>
+                            </h4>
                         </div>
                         {metricValue ? (
-                            <span className="text-[11px] font-extrabold text-foreground">{metricValue}</span>
+                            <span className="text-sm font-black text-primary shrink-0 rounded-md bg-primary/10 px-2 py-1 border border-primary/20">
+                                {metricValue}
+                            </span>
                         ) : null}
                     </div>
-                    <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                        {activeDescription}
-                    </p>
-                    {formula ? (
-                        <div className="mt-1.5 rounded bg-muted/60 px-2 py-1 font-mono text-[10px] text-foreground border border-border/50">
-                            <span className="font-semibold font-sans text-muted-foreground mr-1">Formula:</span>
-                            {formula}
+
+                    {/* What it is / Description */}
+                    <div className="mt-3 space-y-2.5 text-xs text-foreground/90 leading-relaxed">
+                        <div>
+                            <p className="font-semibold text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                                Definition &amp; Diligence Context
+                            </p>
+                            <p className="text-foreground/90">{activeDescription}</p>
                         </div>
-                    ) : null}
-                    {citation ? (
-                        <div className="mt-1.5 border-t border-border/60 pt-1 text-[10px] text-foreground">
-                            <span className="font-semibold text-muted-foreground">Source: </span>
-                            {citation}
-                        </div>
-                    ) : null}
-                    {interactive ? (
-                        <div className="mt-2 border-t border-border/60 pt-1.5">
-                            <button
-                                type="button"
-                                onClick={handleAskAi}
-                                className="flex w-full items-center justify-center gap-1.5 rounded border border-primary/30 bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer shadow-2xs"
-                            >
-                                <Bot className="h-3 w-3" />
-                                <span>Ask AI to Explain</span>
-                            </button>
-                        </div>
-                    ) : null}
+
+                        {formula ? (
+                            <div className="rounded-lg bg-muted/50 p-2.5 border border-border/40">
+                                <p className="font-semibold text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 mb-0.5">
+                                    <Calculator className="h-3 w-3 text-primary" />
+                                    <span>Calculation Formula</span>
+                                </p>
+                                <p className="font-mono text-xs text-foreground/90 leading-snug">
+                                    {formula}
+                                </p>
+                            </div>
+                        ) : null}
+
+                        {citation ? (
+                            <div className="rounded-lg bg-primary/5 p-2.5 border border-primary/20">
+                                <p className="font-semibold text-[10px] uppercase tracking-wider text-primary flex items-center gap-1 mb-0.5">
+                                    <span>Source Document / Provenance</span>
+                                </p>
+                                <p className="text-xs text-foreground/80 leading-snug">
+                                    {citation}
+                                </p>
+                            </div>
+                        ) : null}
+
+                        {interactive ? (
+                            <div className="pt-2 mt-2 border-t border-border/50">
+                                <button
+                                    type="button"
+                                    onClick={handleAskAi}
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer shadow-xs"
+                                >
+                                    <Bot className="h-3.5 w-3.5" />
+                                    <span>Ask AI to Explain</span>
+                                </button>
+                            </div>
+                        ) : null}
+                    </div>
                 </div>,
                 document.body
             )}

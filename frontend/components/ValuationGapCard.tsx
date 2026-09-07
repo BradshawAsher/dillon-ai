@@ -71,7 +71,7 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
                                 <span className="text-xs font-medium text-foreground">Asking Price</span>
                                 <DataOriginBadge
                                     origin="user_entered"
-                                    label="Asking Price"
+                                    label="User Input (Asking Price)"
                                     metricLabel="Seller Asking Price"
                                     metricValue={`$${data.askingPrice.toLocaleString()}`}
                                     description="Initial valuation demanded by seller / intermediary in deal teaser or offering memorandum."
@@ -90,7 +90,7 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
                                 <span className="text-xs font-medium text-foreground">Fair Value Estimate</span>
                                 <DataOriginBadge
                                     origin="calculated"
-                                    label="Fair Value"
+                                    label="Calculated (Fair Value)"
                                     metricLabel="Fair Value Estimate"
                                     metricValue={`$${data.fairValue.toLocaleString()}`}
                                     formula="EBITDA × 4.0x or AI Synthesis Valuation"
@@ -110,7 +110,7 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
                                 <span className="text-xs font-medium text-foreground">Total Potential Value</span>
                                 <DataOriginBadge
                                     origin="calculated"
-                                    label="Potential"
+                                    label="Calculated (Potential Value)"
                                     metricLabel="Total Potential Value"
                                     metricValue={`$${data.totalPotentialValue.toLocaleString()}`}
                                     formula="Fair Value + Productivity Gain + Margin Improvement"
@@ -136,14 +136,14 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                             <span className="text-xs text-muted-foreground">Productivity Gains (est.)</span>
-                            <DataOriginBadge origin="assumption" label="+15% EBITDA" compact />
+                            <DataOriginBadge origin="assumption" label="Assumption (+15% EBITDA)" compact />
                         </div>
                         <span className="text-xs font-medium text-foreground">+${data.productivityGain.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                             <span className="text-xs text-muted-foreground">Margin Improvement (est.)</span>
-                            <DataOriginBadge origin="assumption" label="+300 bps" compact />
+                            <DataOriginBadge origin="assumption" label="Assumption (+300 bps)" compact />
                         </div>
                         <span className="text-xs font-medium text-foreground">+${data.marginImprovement.toLocaleString()}</span>
                     </div>
