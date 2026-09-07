@@ -286,6 +286,7 @@ export function isFactReconciled(
         working_capital: ['reported_working_capital', 'working_capital'],
     }
 
+    const factValue = fact.value
     const checkDocReconciliation = (doc: SubmissionHistoryItem): boolean => {
         if (!doc.reconciliationJson) return false
         try {
@@ -298,8 +299,8 @@ export function isFactReconciled(
                 for (const inputKey of reconciliationInputKeys[key] || [key]) {
                     const inputValue = Number(metric.inputs[inputKey])
                     if (!Number.isFinite(inputValue)) continue
-                    const scale = Math.max(Math.abs(fact.value), Math.abs(inputValue), 1)
-                    if (Math.abs(fact.value - inputValue) / scale <= 0.02) return true
+                    const scale = Math.max(Math.abs(factValue), Math.abs(inputValue), 1)
+                    if (Math.abs(factValue - inputValue) / scale <= 0.02) return true
                 }
             }
         } catch { }

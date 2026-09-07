@@ -528,5 +528,62 @@ describe('DealChatPanel Client-Side AI Tools', () => {
     })
 })
 
+describe('DealChatPanel Voice Dictation & SpeechRecognition', () => {
+    it('accurately combines speech transcript chunks with existing input text', async () => {
+        const { combineSpeechTranscript } = await import('./DealChatPanel')
 
+        // Case 1: Empty initial input
+        expect(combineSpeechTranscript('', 'What is the DSCR?')).toBe('What is the DSCR?')
 
+        // Case 2: Input without trailing space
+        expect(combineSpeechTranscript('Analyze the 2024 P&L', 'and explain add-backs'))
+            .toBe('Analyze the 2024 P&L and explain add-backs')
+
+        // Case 3: Input already ending with a space
+        expect(combineSpeechTranscript('Look at customer concentration ', 'in the 2024 data'))
+            .toBe('Look at customer concentration in the 2024 data')
+
+        // Case 4: Input ending with a newline
+        expect(combineSpeechTranscript('Please review:\n', '1. Revenue trajectory'))
+            .toBe('Please review:\n1. Revenue trajectory')
+
+        // Case 5: Empty speech transcript
+        expect(combineSpeechTranscript('Existing text preserved', '   ')).toBe('Existing text preserved')
+    })
+
+    it('detects SpeechRecognition constructor when available', async () => {
+        const { getSpeechRecognitionConstructor } = await import('./DealChatPanel')
+
+        const originalSpeechRecognition = (globalThis as any).SpeechRecognition
+        const originalWebkitSpeechRecognition = (globalThis as any).webkitSpeechRecognition
+
+        try {
+            // No API in environment
+            delete (globalThis as any).SpeechRecognition
+            delete (globalThis as any).webkitSpeechRecognition
+            expect(getSpeechRecognitionConstructor()).toBeNull()
+
+            // Standard SpeechRecognition available
+            class MockSpeechRecognition {}
+            ;(globalThis as any).SpeechRecognition = MockSpeechRecognition
+            expect(getSpeechRecognitionConstructor()).toBe(MockSpeechRecognition)
+
+            // Fallback webkitSpeechRecognition
+            delete (globalThis as any).SpeechRecognition
+            class MockWebkitSpeechRecognition {}
+            ;(globalThis as any).webkitSpeechRecognition = MockWebkitSpeechRecognition
+            expect(getSpeechRecognitionConstructor()).toBe(MockWebkitSpeechRecognition)
+        } finally {
+            if (originalSpeechRecognition !== undefined) {
+                ;(globalThis as any).SpeechRecognition = originalSpeechRecognition
+            } else {
+                delete (globalThis as any).SpeechRecognition
+            }
+            if (originalWebkitSpeechRecognition !== undefined) {
+                ;(globalThis as any).webkitSpeechRecognition = originalWebkitSpeechRecognition
+            } else {
+                delete (globalThis as any).webkitSpeechRecognition
+            }
+        }
+    })
+})

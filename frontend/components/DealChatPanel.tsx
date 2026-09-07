@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUpRight, Bot, Compass, Edit2, ExternalLink, FolderKanban, Maximize2, MessageSquare, Minimize2, Move, PanelLeft, Plus, RotateCcw, Search, Send, Sparkles, ThumbsDown, ThumbsUp, Trash2, X, AlertTriangle, Bug, Brain, Terminal, Cpu, ChevronDown, ChevronRight, CheckCircle2, Loader2, FileSpreadsheet, Paperclip, Printer, Scale } from 'lucide-react'
+import { ArrowUpRight, Bot, Compass, Edit2, ExternalLink, FolderKanban, Maximize2, MessageSquare, Minimize2, Move, PanelLeft, Plus, RotateCcw, Search, Send, Sparkles, ThumbsDown, ThumbsUp, Trash2, X, AlertTriangle, Bug, Brain, Terminal, Cpu, ChevronDown, ChevronRight, CheckCircle2, Loader2, FileSpreadsheet, Paperclip, Printer, Scale, Mic, MicOff } from 'lucide-react'
 
 import { Button } from '../lib/shadcn/button'
 import { Card } from '../lib/shadcn/card'
@@ -25,6 +25,56 @@ import { classifyQuestionnaireFile, questionnaireDraftFromImport, questionnaireD
 import { parseQuestionnaireFile } from '../utils/questionnaireImport'
 import { buildUnifiedMathChecks } from '../utils/unifiedMathChecks'
 import { BENCHMARK_PROVENANCE, detectSector, getSectorProfile } from '../utils/verticalBenchmarks'
+
+export interface SpeechRecognitionResultItem {
+    readonly transcript: string
+    readonly confidence: number
+}
+
+export interface SpeechRecognitionResultList {
+    readonly length: number
+    item(index: number): SpeechRecognitionResult
+    [index: number]: SpeechRecognitionResult
+}
+
+export interface SpeechRecognitionResult {
+    readonly isFinal: boolean
+    readonly length: number
+    item(index: number): SpeechRecognitionResultItem
+    [index: number]: SpeechRecognitionResultItem
+}
+
+export interface SpeechRecognitionEvent extends Event {
+    readonly resultIndex: number
+    readonly results: SpeechRecognitionResultList
+}
+
+export interface SpeechRecognitionInstance extends EventTarget {
+    continuous: boolean
+    interimResults: boolean
+    lang: string
+    start(): void
+    stop(): void
+    abort(): void
+    onstart: ((this: SpeechRecognitionInstance, ev: Event) => any) | null
+    onresult: ((this: SpeechRecognitionInstance, ev: SpeechRecognitionEvent) => any) | null
+    onerror: ((this: SpeechRecognitionInstance, ev: Event & { error?: string }) => any) | null
+    onend: ((this: SpeechRecognitionInstance, ev: Event) => any) | null
+}
+
+export function getSpeechRecognitionConstructor(): (new () => SpeechRecognitionInstance) | null {
+    const scope = typeof window !== 'undefined' ? (window as any) : typeof globalThis !== 'undefined' ? (globalThis as any) : null
+    if (!scope) return null
+    return scope.SpeechRecognition || scope.webkitSpeechRecognition || null
+}
+
+export function combineSpeechTranscript(baseText: string, speechText: string): string {
+    const trimmedSpeech = speechText.trim()
+    if (!trimmedSpeech) return baseText
+    if (!baseText) return trimmedSpeech
+    const separator = /[\s\n]$/.test(baseText) ? '' : ' '
+    return `${baseText}${separator}${trimmedSpeech}`
+}
 
 export type ResponseTier = 'cloud_ai' | 'direct_llm' | 'local_heuristics'
 
@@ -3717,6 +3767,10 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     const [isProcessingAttachment, setIsProcessingAttachment] = useState(false)
     const [isDraggingFile, setIsDraggingFile] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const [isListening, setIsListening] = useState(false)
+    const [speechError, setSpeechError] = useState<string | null>(null)
+    const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
+    const speechBaseTextRef = useRef<string>('')
 
     const handleIncomingFile = useCallback(async (file: File) => {
         const decision = classifyQuestionnaireFile(file)
@@ -4793,9 +4847,87 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         }
     }, [allSyntheses, documents, messages, model, projectName, sessionId, synthesis])
 
+    const stopVoiceDictation = useCallback(() => {
+        if (recognitionRef.current) {
+            try {
+                recognitionRef.current.stop()
+            } catch {
+                // Ignore errors if recognition already stopped
+            }
+            recognitionRef.current = null
+        }
+        setIsListening(false)
+    }, [])
+
+    const toggleVoiceDictation = useCallback(() => {
+        if (isListening) {
+            stopVoiceDictation()
+            return
+        }
+
+        const SpeechRecognitionClass = getSpeechRecognitionConstructor()
+        if (!SpeechRecognitionClass) {
+            setSpeechError('Voice dictation is not supported by your browser (supported in Chrome, Edge, Safari).')
+            setTimeout(() => setSpeechError(null), 5000)
+            return
+        }
+
+        try {
+            setSpeechError(null)
+            const recognition = new SpeechRecognitionClass()
+            recognition.continuous = true
+            recognition.interimResults = true
+            recognition.lang = 'en-US'
+
+            speechBaseTextRef.current = input
+
+            recognition.onstart = () => {
+                setIsListening(true)
+            }
+
+            recognition.onresult = (event: SpeechRecognitionEvent) => {
+                let sessionTranscript = ''
+                for (let i = 0; i < event.results.length; i++) {
+                    const res = event.results[i]
+                    if (res && res[0]) {
+                        sessionTranscript += res[0].transcript
+                    }
+                }
+                const updated = combineSpeechTranscript(speechBaseTextRef.current, sessionTranscript)
+                setInput(updated)
+            }
+
+            recognition.onerror = (event: any) => {
+                const errName = event?.error || 'speech_recognition_error'
+                console.warn('[DealChatPanel] Speech recognition error:', errName)
+                if (errName === 'not-allowed' || errName === 'service-not-allowed') {
+                    setSpeechError('Microphone permission denied. Please allow microphone access in your browser.')
+                } else if (errName !== 'no-speech') {
+                    setSpeechError(`Voice dictation notice: ${errName}`)
+                }
+                stopVoiceDictation()
+                setTimeout(() => setSpeechError(null), 5000)
+            }
+
+            recognition.onend = () => {
+                setIsListening(false)
+                recognitionRef.current = null
+            }
+
+            recognitionRef.current = recognition
+            recognition.start()
+        } catch (err: any) {
+            console.error('[DealChatPanel] Failed to start speech recognition:', err)
+            setSpeechError('Failed to initialize microphone. Please verify browser permissions.')
+            stopVoiceDictation()
+            setTimeout(() => setSpeechError(null), 5000)
+        }
+    }, [input, isListening, stopVoiceDictation])
+
     const handleSend = useCallback(() => {
+        stopVoiceDictation()
         sendMessageText(input)
-    }, [input, sendMessageText])
+    }, [input, sendMessageText, stopVoiceDictation])
 
     // Global listener for 1-click explanation requests from CardExplainerPopover
     useEffect(() => {
@@ -4834,6 +4966,19 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             window.removeEventListener('mergeworks:clear-chat', handleClearChat)
         }
     }, [sendMessageText])
+
+    // Cleanly stop voice dictation whenever the panel is closed or unmounts
+    useEffect(() => {
+        if (!isOpen) {
+            stopVoiceDictation()
+        }
+    }, [isOpen, stopVoiceDictation])
+
+    useEffect(() => {
+        return () => {
+            stopVoiceDictation()
+        }
+    }, [stopVoiceDictation])
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -5639,6 +5784,21 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                 </button>
                             </div>
                         )}
+                        {speechError && (
+                            <div className="mb-1.5 flex items-center justify-between gap-1.5 rounded bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 text-[11px] text-amber-600 dark:text-amber-400">
+                                <span className="flex items-center gap-1.5">
+                                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                                    <span>{speechError}</span>
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setSpeechError(null)}
+                                    className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 hover:underline cursor-pointer"
+                                >
+                                    Dismiss
+                                </button>
+                            </div>
+                        )}
                         <div className="flex items-end gap-1.5">
                             <input
                                 ref={fileInputRef}
@@ -5665,6 +5825,26 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
                                 ) : (
                                     <Paperclip className="h-4 w-4" />
+                                )}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={toggleVoiceDictation}
+                                disabled={isProcessingAttachment}
+                                className={`h-[38px] w-[38px] shrink-0 cursor-pointer transition-colors ${
+                                    isListening
+                                        ? 'text-red-500 bg-red-500/10 hover:bg-red-500/20 ring-1 ring-red-500/40 animate-pulse'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                                title={isListening ? "Listening... click to stop dictation" : "Voice dictation (speech-to-text)"}
+                                aria-label={isListening ? "Stop voice dictation" : "Start voice dictation"}
+                            >
+                                {isListening ? (
+                                    <Mic className="h-4 w-4 text-red-500" />
+                                ) : (
+                                    <Mic className="h-4 w-4" />
                                 )}
                             </Button>
                             <Textarea

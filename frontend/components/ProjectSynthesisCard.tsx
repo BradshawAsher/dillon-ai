@@ -1737,12 +1737,52 @@ export default function ProjectSynthesisCard({
                                         const label = pct !== null ? (pct >= 70 ? 'High' : pct >= 40 ? 'Medium' : 'Low') : null
                                         const color = pct !== null ? (pct >= 70 ? 'text-green-600 dark:text-green-400' : pct >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-destructive') : ''
 
+                                        const handleAskAiAboutValuation = () => {
+                                            const pName = synthesis?.projectName || 'this deal'
+                                            const baseFormatted = formatCurrencyValue(synthesis.valuationBaseEstimate, synthesis.valuationCurrency) || 'Pending'
+                                            const lowerFormatted = formatCurrencyValue(synthesis.valuationLowerBound, synthesis.valuationCurrency) || 'Pending'
+                                            const upperFormatted = formatCurrencyValue(synthesis.valuationUpperBound, synthesis.valuationCurrency) || 'Pending'
+                                            const confLabel = pct !== null ? `${label} (${pct}%)` : (synthesis.valuationConfidence || 'Unrated')
+                                            const askFormatted = targetAskingPrice ? formatCurrencyValue(String(targetAskingPrice), synthesis.valuationCurrency) : null
+                                            const discountText = targetAskingPrice && impliedDiscountAmount && Number(impliedDiscountAmount) > 0
+                                                ? ` with a Seller Ask of ${askFormatted} (-${formatCurrencyValue(String(impliedDiscountAmount), synthesis.valuationCurrency)} / ${Math.round(Number(impliedDiscountPercentage) || 0)}% negotiation target)`
+                                                : askFormatted ? ` with a Seller Ask of ${askFormatted}` : ''
+                                            const rationaleText = rationale ? `\n\nStated Valuation Rationale: "${rationale}"` : ''
+
+                                            const question = `Why was the valuation for ${pName} rated at ${confLabel} confidence with a base fair value of ${baseFormatted} (range: ${lowerFormatted} - ${upperFormatted})${discountText}?${rationaleText}
+
+Please break down:
+1. **Valuation Methodology & Multiples**: What baseline earnings (EBITDA, SDE, Revenue), sector multiples, and industry benchmarks justify this ${baseFormatted} valuation?
+2. **Confidence Score Rationale**: Why was confidence rated at ${confLabel}? What data gaps, unverified add-backs, concentration risks, or reconciliation discrepancies influenced this rating?
+3. **Buyer Negotiation Defense**: How can an acquirer defend this fair value estimate and price haircut during negotiations with the seller?`
+
+                                            if (typeof window !== 'undefined') {
+                                                window.dispatchEvent(
+                                                    new CustomEvent('mergeworks:open-chat-ask', {
+                                                        detail: {
+                                                            question,
+                                                            topic: 'Valuation & Confidence Rationale',
+                                                        },
+                                                    })
+                                                )
+                                            }
+                                        }
+
                                         return (
                                             <div className="space-y-2.5">
                                                 <div className="flex flex-wrap items-center justify-between gap-2">
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex flex-wrap items-center gap-2">
                                                         {pct !== null ? <Badge variant="outline" className={color}>{label} confidence ({pct}%)</Badge> : null}
                                                         {synthesis.valuationCurrency ? <span className="text-xs text-muted-foreground">{synthesis.valuationCurrency}</span> : null}
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleAskAiAboutValuation}
+                                                            className="inline-flex items-center gap-1.5 rounded-md border border-primary/25 bg-primary/5 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/10 hover:border-primary/40 transition-colors shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                                                            title="Ask Dillon AI why this valuation and confidence score was rated what it was"
+                                                        >
+                                                            <Sparkles className="h-3 w-3 text-primary" />
+                                                            <span>Ask with AI</span>
+                                                        </button>
                                                     </div>
                                                     {targetAskingPrice ? (
                                                         <div className="flex items-center gap-2 text-xs">
@@ -1793,9 +1833,31 @@ export default function ProjectSynthesisCard({
                                         const fmt = (v: number) => v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(1)}M` : v >= 1_000 ? `$${(v / 1_000).toFixed(0)}K` : `$${v.toFixed(0)}`
                                         return (
                                             <div>
-                                                <div className="mb-2 flex items-center gap-2">
-                                                    <Badge variant="outline" className={confidenceColor}>{confidence} confidence</Badge>
-                                                    <span className="text-xs text-muted-foreground">Illustrative — based on {ebitda ? 'EBITDA × multiple' : 'revenue × market range'}</span>
+                                                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant="outline" className={confidenceColor}>{confidence} confidence</Badge>
+                                                        <span className="text-xs text-muted-foreground">Illustrative — based on {ebitda ? 'EBITDA × multiple' : 'revenue × market range'}</span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (typeof window !== 'undefined') {
+                                                                window.dispatchEvent(
+                                                                    new CustomEvent('mergeworks:open-chat-ask', {
+                                                                        detail: {
+                                                                            question: `Why is the illustrative valuation for ${synthesis?.projectName || 'this deal'} currently rated at ${confidence} confidence, and what specific documentation or evidence is needed to calibrate a full valuation?`,
+                                                                            topic: 'Illustrative Valuation Rationale',
+                                                                        },
+                                                                    })
+                                                                )
+                                                            }
+                                                        }}
+                                                        className="inline-flex items-center gap-1.5 rounded-md border border-primary/25 bg-primary/5 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/10 hover:border-primary/40 transition-colors shadow-2xs cursor-pointer"
+                                                        title="Ask Dillon AI why this illustrative valuation was rated what it was"
+                                                    >
+                                                        <Sparkles className="h-3 w-3 text-primary" />
+                                                        <span>Ask with AI</span>
+                                                    </button>
                                                 </div>
                                                 <div className="grid gap-2 md:grid-cols-3">
                                                     <div className="rounded-md border border-dashed border-border bg-background px-3 py-2">
@@ -1816,8 +1878,30 @@ export default function ProjectSynthesisCard({
                                     }
                                     return (
                                         <div className="rounded-lg border border-dashed border-warning/40 bg-warning/5 p-4">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <Badge variant="outline" className="text-destructive">Very low confidence</Badge>
+                                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="text-destructive">Very low confidence</Badge>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (typeof window !== 'undefined') {
+                                                            window.dispatchEvent(
+                                                                new CustomEvent('mergeworks:open-chat-ask', {
+                                                                    detail: {
+                                                                        question: `What specific financial records and P&L line items are missing from ${synthesis?.projectName || 'this deal'} to compute a reliable valuation?`,
+                                                                        topic: 'Missing Valuation Data',
+                                                                    },
+                                                                })
+                                                            )
+                                                        }
+                                                    }}
+                                                    className="inline-flex items-center gap-1.5 rounded-md border border-primary/25 bg-primary/5 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/10 hover:border-primary/40 transition-colors shadow-2xs cursor-pointer"
+                                                    title="Ask Dillon AI what is needed for valuation"
+                                                >
+                                                    <Sparkles className="h-3 w-3 text-primary" />
+                                                    <span>Ask with AI</span>
+                                                </button>
                                             </div>
                                             <p className="text-sm font-semibold text-foreground">Insufficient data for valuation</p>
                                             <p className="mt-1 text-sm leading-6 text-muted-foreground">Upload financial statements (P&L, balance sheet) with clear revenue and EBITDA figures. Once confirmed financial facts are available, an illustrative valuation range will be calculated automatically.</p>
