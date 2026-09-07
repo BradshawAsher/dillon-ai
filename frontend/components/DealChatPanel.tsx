@@ -10,6 +10,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import type { WorkspaceTab } from '../hooks/useDealWorkspaceState'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { escapeHtml } from '../utils/escapeHtml'
 import { computeAmortizingLoan, normalizeEquityFraction } from '../utils/dealMath'
 import { sendIssueReportSlackAlert, type IssueCategory } from '../services/slackAlertService'
 import { getStoredUser } from '../services/supabaseAuth'
@@ -2002,7 +2003,7 @@ function renderSimpleMarkdown(
 
         const renderedLineParts = elements.map((part, pIdx) => {
             if (typeof part !== 'string') return part
-            const processed = part
+            const processed = escapeHtml(part)
                 .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
                 .replace(/\*(.+?)\*/g, '<em>$1</em>')
                 .replace(/`(.+?)`/g, '<code class="rounded bg-foreground/10 px-1 py-0.5 text-[11px] font-mono">$1</code>')

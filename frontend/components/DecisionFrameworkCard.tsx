@@ -57,7 +57,7 @@ export default function DecisionFrameworkCard({ model, synthesis }: Props) {
             results.push({ question: 'Can I grow or improve this business?', answer: 'unknown', explanation: 'Complete synthesis needed to identify growth opportunities.' })
         } else if (synthesis.greenFlags && synthesis.greenFlags.length >= 2 && synthesis.negotiationLevers && synthesis.negotiationLevers.length >= 1) {
             results.push({ question: 'Can I grow or improve this business?', answer: 'yes', explanation: `${synthesis.greenFlags.length} positive signals and ${synthesis.negotiationLevers.length} lever${synthesis.negotiationLevers.length > 1 ? 's' : ''} suggest improvement potential.` })
-        } else if (synthesis.finalTrafficLight === 'RED') {
+        } else if ((synthesis.finalTrafficLight ?? '').toUpperCase() === 'RED') {
             results.push({ question: 'Can I grow or improve this business?', answer: 'no', explanation: 'High-risk profile suggests fundamental issues that may limit upside potential.' })
         } else {
             results.push({ question: 'Can I grow or improve this business?', answer: 'unknown', explanation: 'Mixed signals — more diligence needed to assess growth potential.' })

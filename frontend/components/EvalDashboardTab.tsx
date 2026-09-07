@@ -456,7 +456,10 @@ export default function EvalDashboardTab({
         }
         return { ...dim, avgPct }
     }).filter((d): d is typeof d & { avgPct: number } => d.avgPct !== null)
-    const weakestKey = docResults.length > 0
+    // Guard on categoryAverages (what we reduce), not docResults: every dimension
+    // can filter out to an empty categoryAverages even when docResults is non-empty,
+    // and reduce with no initial value throws on an empty array.
+    const weakestKey = categoryAverages.length > 0
         ? categoryAverages.reduce((min, d) => (d.avgPct < min.avgPct ? d : min)).key
         : null
     const overallPct = latestRun.overallPercentage ?? 0

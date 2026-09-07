@@ -48,9 +48,11 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
     if (!data) return null
 
     const maxValue = Math.max(data.askingPrice, data.totalPotentialValue) * 1.1
-    const askingWidth = (data.askingPrice / maxValue) * 100
-    const fairWidth = (data.fairValue / maxValue) * 100
-    const potentialWidth = (data.totalPotentialValue / maxValue) * 100
+    // Guard an all-zero data set so the bar widths never resolve to "NaN%".
+    const widthPct = (value: number) => (maxValue > 0 ? (value / maxValue) * 100 : 0)
+    const askingWidth = widthPct(data.askingPrice)
+    const fairWidth = widthPct(data.fairValue)
+    const potentialWidth = widthPct(data.totalPotentialValue)
 
     return (
         <Card className="overflow-hidden">

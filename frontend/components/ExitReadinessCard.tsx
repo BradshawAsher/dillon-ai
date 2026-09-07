@@ -93,7 +93,8 @@ export default function ExitReadinessCard({ model, synthesis }: Props) {
 
     const readyCount = items.items.filter(i => i.status === 'ready').length
     const totalCount = items.items.length
-    const readyPct = (readyCount / totalCount) * 100
+    // Guard an empty checklist so the readiness percentage never renders "NaN%".
+    const readyPct = totalCount > 0 ? (readyCount / totalCount) * 100 : 0
 
     const statusIcon = (status: string) => {
         switch (status) {

@@ -1,5 +1,7 @@
 import { ThumbsDown, ThumbsUp } from 'lucide-react'
 
+import { escapeHtml } from '../../utils/escapeHtml'
+
 export type Message = {
     id: string
     role: 'user' | 'assistant'
@@ -7,20 +9,27 @@ export type Message = {
     timestamp: number
 }
 
+// Escaping runs first (see escapeHtml), then the markdown regex below inserts
+// only the safe <strong>/<em>/<code> tags we control — so untrusted document
+// text echoed into an assistant message can never inject live markup.
+function applyInlineMarkdown(line: string): string {
+    return escapeHtml(line)
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`(.+?)`/g, '<code class="rounded bg-foreground/10 px-1 py-0.5 text-[11px] font-mono">$1</code>')
+}
+
 function renderSimpleMarkdown(text: string) {
     return text.split('\n').map((line, i) => {
-        let processed = line
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            .replace(/`(.+?)`/g, '<code class="rounded bg-foreground/10 px-1 py-0.5 text-[11px] font-mono">$1</code>')
+        const processed = applyInlineMarkdown(line)
 
         if (/^#{1,3}\s/.test(line)) {
-            const content = line.replace(/^#{1,3}\s+/, '')
+            const content = applyInlineMarkdown(line.replace(/^#{1,3}\s+/, ''))
             return <p key={i} className="font-bold text-xs uppercase tracking-wide text-foreground mt-2 mb-1" dangerouslySetInnerHTML={{ __html: content }} />
         }
 
         if (/^\s*[-*]\s/.test(line)) {
-            const content = line.replace(/^\s*[-*]\s+/, '')
+            const content = applyInlineMarkdown(line.replace(/^\s*[-*]\s+/, ''))
             return (
                 <div key={i} className="flex items-start gap-1.5 ml-1 my-0.5">
                     <span className="text-primary text-[10px] mt-1">•</span>

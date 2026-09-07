@@ -286,7 +286,7 @@ export default function DealMemoView({ model, synthesis, projectName, documents,
                 {synthesis ? (
                     <>
                         <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant={synthesis.finalTrafficLight === 'GREEN' ? 'success' : synthesis.finalTrafficLight === 'RED' ? 'destructive' : 'warning'} className="text-sm px-3 py-1">
+                            <Badge variant={(synthesis.finalTrafficLight ?? '').toUpperCase() === 'GREEN' ? 'success' : (synthesis.finalTrafficLight ?? '').toUpperCase() === 'RED' ? 'destructive' : 'warning'} className="text-sm px-3 py-1">
                                 {synthesis.finalRecommendation || 'Pending'}
                             </Badge>
                             <Badge variant="outline">{synthesis.finalTrafficLight || synthesis.finalRiskLevel}</Badge>

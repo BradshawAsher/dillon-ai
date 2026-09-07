@@ -62,7 +62,8 @@ export default function ConfidenceMeterCard({ model, synthesis, documents }: Pro
 
     const totalScore = dimensions.reduce((sum, d) => sum + d.score, 0)
     const totalMax = dimensions.reduce((sum, d) => sum + d.maxScore, 0)
-    const pct = Math.round((totalScore / totalMax) * 100)
+    // Guard an empty/zero-max dimension set so the meter never renders "NaN%".
+    const pct = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0
 
     const level = pct >= 75 ? 'High' : pct >= 50 ? 'Medium' : pct >= 25 ? 'Low' : 'Very low'
     const levelColor = pct >= 75 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-red-600'
