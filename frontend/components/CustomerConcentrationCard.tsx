@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import CardInfoPopover from './common/CardInfoPopover'
 import type { SubmissionHistoryItem } from '../utils/submissionHistory'
 import { buildDocumentLinkedEvidence, type EvidenceItem } from '../utils/evidence'
-import { getConcentrationRisk } from '../utils/concentrationRisk'
+import { getConcentrationRisk, maxRevenueShare } from '../utils/concentrationRisk'
 
 type ConcentrationFinding = {
     customer: string
@@ -60,12 +60,15 @@ function parseConcentrationFromSynthesis(synthesis: ProjectSynthesisItem): Conce
         const customerMatch = text.match(/(?:top|largest|single|#1|primary)\s+(?:customer|client|account)\s+(?:is\s+)?([^,.\d]+)/i)
         const customer = customerMatch?.[1]?.trim() || 'Top customer'
         const primaryCitation = finding.citations?.[0]
+        // Normalize case so an explicit "Critical"/"High" finding severity still
+        // escalates rather than silently falling back to the group default.
+        const findingSeverity = (finding.severity ?? '').trim().toLowerCase()
 
         findings.push({
             customer,
             revenueShare,
             detail: text,
-            severity: finding.severity === 'critical' || finding.severity === 'high' ? 'critical' : finding.severity === 'medium' ? 'medium' : sev,
+            severity: findingSeverity === 'critical' || findingSeverity === 'high' ? 'critical' : findingSeverity === 'medium' ? 'medium' : sev,
             source: primaryCitation?.sourceFile || (revenueShare && revenueShare > 0.3 ? 'High concentration risk' : 'Customer dependency noted'),
             sourceLocation: primaryCitation?.sourceLocation,
             excerpt: primaryCitation?.excerpt,
@@ -181,7 +184,7 @@ export default function CustomerConcentrationCard({ synthesis, documents = [], o
     if (findings.length === 0 && !top5Breakdown) return null
 
     const risk = getRiskLevel(findings)
-    const topConcentration = top5Breakdown?.top1Share || Math.max(...findings.map((f) => f.revenueShare ?? 0), 0)
+    const topConcentration = top5Breakdown?.top1Share || maxRevenueShare(findings)
 
     return (
         <Card className="overflow-hidden shadow-xs">

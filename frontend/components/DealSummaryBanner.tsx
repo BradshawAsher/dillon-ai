@@ -83,9 +83,12 @@ export default function DealSummaryBanner({ model, synthesis, projectName, docCo
 
     if (chips.length === 0 && !synthesis) return null
 
-    const trafficColor = synthesis?.finalTrafficLight === 'GREEN' ? 'bg-green-500' :
-        synthesis?.finalTrafficLight === 'RED' ? 'bg-red-500' :
-        synthesis?.finalTrafficLight === 'YELLOW' ? 'bg-amber-500' : 'bg-muted-foreground/30'
+    // finalTrafficLight case is not guaranteed by the pipeline (some rows arrive
+    // lowercase), so normalize before matching or the dot silently goes grey.
+    const trafficLight = (synthesis?.finalTrafficLight ?? '').trim().toUpperCase()
+    const trafficColor = trafficLight === 'GREEN' ? 'bg-green-500' :
+        trafficLight === 'RED' ? 'bg-red-500' :
+        trafficLight === 'YELLOW' ? 'bg-amber-500' : 'bg-muted-foreground/30'
 
     return (
         <div className="space-y-2 rounded-lg border border-border bg-card/80 px-4 py-2.5">
@@ -96,7 +99,7 @@ export default function DealSummaryBanner({ model, synthesis, projectName, docCo
                 </div>
                 {synthesis?.finalRecommendation && (
                     <div className="flex items-center gap-1.5">
-                        <Badge variant={synthesis.finalTrafficLight === 'GREEN' ? 'success' : synthesis.finalTrafficLight === 'RED' ? 'destructive' : 'warning'} className="text-[11px]">
+                        <Badge variant={trafficLight === 'GREEN' ? 'success' : trafficLight === 'RED' ? 'destructive' : 'warning'} className="text-[11px]">
                             {synthesis.finalRecommendation}
                         </Badge>
                         <ActionableRecommendationInfoButton
