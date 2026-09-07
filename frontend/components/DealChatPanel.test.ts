@@ -486,6 +486,46 @@ describe('DealChatPanel Client-Side AI Tools', () => {
         expect(anthropicSchema?.properties?.queryType?.enum).toContain('math_checks')
         expect(anthropicSchema?.properties?.queryType?.enum).toContain('audit_trail')
     })
+
+    it('verifies web_intelligence_enrichment is registered in tool schemas', async () => {
+        const { CHAT_AGENT_OPENAI_TOOLS, CHAT_AGENT_ANTHROPIC_TOOLS } = await import('./DealChatPanel')
+        const openAiTool = CHAT_AGENT_OPENAI_TOOLS.find(t => t.function.name === 'web_intelligence_enrichment')
+        expect(openAiTool).toBeDefined()
+        expect(openAiTool?.function.description).toContain('public web intelligence')
+
+        const anthropicTool = CHAT_AGENT_ANTHROPIC_TOOLS.find(t => t.name === 'web_intelligence_enrichment')
+        expect(anthropicTool).toBeDefined()
+        expect(anthropicTool?.description).toContain('public web intelligence')
+    })
+
+    it('does not fabricate web intelligence when the direct browser path has no search provider', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        const result = executeClientSideTool('web_intelligence_enrichment', {
+            domain: 'https://apexplumbing.com/about',
+        }, mockContext)
+
+        expect(result.success).toBe(false)
+        expect(result.status).toBe('server_search_required')
+        expect(result.domain).toBe('apexplumbing.com')
+        expect(result.message).toContain('No public facts were generated')
+        expect(result).not.toHaveProperty('digitalFootprintScore')
+        expect(result).not.toHaveProperty('reviewRating')
+        expect(result).not.toHaveProperty('techStack')
+        expect(result.requiredOutput).toContain('source URL for every factual claim')
+        expect(result.guidance).toContain('tab:diagnostics#diag-public-data')
+    })
+
+    it('uses the shared internal sector profile and discloses benchmark provenance', async () => {
+        const { executeClientSideTool } = await import('./DealChatPanel')
+        const result = executeClientSideTool('smb_valuation_benchmarks', {
+            industry: 'Commercial HVAC and plumbing contractor',
+        }, mockContext)
+
+        expect(result.detectedSector).toContain('HVAC')
+        expect(result.ranges.entryMultiple.median).toBe(4.2)
+        expect(result.provenance.label).toContain('Illustrative internal')
+        expect(result.warning).toContain('Do not present them as live')
+    })
 })
 
 

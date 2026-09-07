@@ -102,18 +102,18 @@ export const CARD_DESCRIPTIONS: Record<string, CardDescription> = {
     'benchmark-comparison': {
         title: 'SMB Industry Benchmark Comparison',
         category: 'Benchmarking',
-        whatItIs: 'Comparative analysis of company gross margins, operating expenses, and SDE multiples against peer datasets in the same industry tier.',
-        calculation: 'Benchmarked against RMA (Risk Management Association) and BizBuySell median transaction multiples.',
-        diligenceImpact: 'Validates whether seller cost structures are lean or bloated compared to standard industry operating profiles.',
-        benchmarkOrTarget: 'Operating Margin within ±5% of industry 50th percentile',
+        whatItIs: 'Comparative screening of company margins, growth, payback, leverage, and entry multiple against an internally curated sector profile.',
+        calculation: 'Deal values are placed against illustrative internal low, midpoint, and high ranges. The ranges are not a live or licensed market-comparables feed.',
+        diligenceImpact: 'Highlights areas for follow-up without proving that the target is above or below a current market peer group.',
+        benchmarkOrTarget: 'Analyst must validate sector, size, geography, period, and a current citable source',
     },
     'industry-benchmarks': {
         title: 'Industry Benchmarks & Sector Medians',
         category: 'Benchmarking',
-        whatItIs: 'Comparative sector intelligence evaluating target company EBITDA margin, revenue growth, customer concentration, and leverage against verified industry medians (BizBuySell, IBISWorld, RMA Annual Statement Studies).',
-        calculation: 'Direct statistical comparison against SIC / NAICS code peer distributions.',
-        diligenceImpact: 'Confirms whether the business is outperforming its peer group or underperforming operationally.',
-        benchmarkOrTarget: 'EBITDA margin 15–25%, YoY growth 5–15%, Top customer < 20%',
+        whatItIs: 'Illustrative internal sector ranges for entry multiple, margins, growth, payback period, and debt-service coverage.',
+        calculation: 'Keyword-based sector selection followed by a comparison with internally curated low, midpoint, and high screening values.',
+        diligenceImpact: 'Suggests where an analyst should seek current market evidence; it does not confirm peer outperformance or underperformance.',
+        benchmarkOrTarget: 'Screening aid only; validate against a current, citable and comparable source',
     },
     'breakeven-analysis': {
         title: 'Breakeven & Operating Leverage Analysis',
@@ -544,10 +544,10 @@ export const CARD_DESCRIPTIONS: Record<string, CardDescription> = {
     'public-data-enrichment': {
         title: 'Public & Web Intelligence Enrichment',
         category: 'Market Intelligence & Verification',
-        whatItIs: 'External OSINT and web signals enrichment module cross-referencing company digital footprint, employee headcount estimates, domain reputation, customer review sentiment, and tech stack telemetry.',
-        calculation: 'Enriched external signals parsed via web domains and public APIs, distinctly segregated with secondary provenance.',
-        diligenceImpact: 'Cross-verifies claims made in the confidential information memorandum (CIM) against real-world customer sentiment and public digital presence.',
-        benchmarkOrTarget: 'Digital Footprint Score ≥ 70/100; Rating ≥ 4.0/5.0 stars',
+        whatItIs: 'A cited public-research request for a target company website, leadership signals, reviews, visible technologies, material news, and legal or regulatory signals.',
+        calculation: 'The hosted Deal Assistant queries its configured server research tool and must return source URLs and access dates; the browser does not synthesize placeholder facts.',
+        diligenceImpact: 'Provides leads to verify against primary sources while keeping public signals separate from uploaded-document evidence.',
+        benchmarkOrTarget: 'Every factual claim needs a source URL; missing search results do not prove an issue is absent',
     },
 
     // === SPENDING, BILLING & EVALS CARDS ===

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { copyToClipboard } from '../utils/clipboard'
-import { Check, Copy, ExternalLink, FileText, X } from 'lucide-react'
+import { Bot, Check, Copy, ExternalLink, FileText, X } from 'lucide-react'
 
 import { Badge } from '../lib/shadcn/badge'
 import { Button } from '../lib/shadcn/button'
@@ -150,6 +150,28 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
         })
     }
 
+    const handleAskAiToExplain = () => {
+        const projectName = (typeof window !== 'undefined' && (window as any).__mergeworks_active_project_name) || 'this deal'
+        const question = `Can you explain this diligence finding in depth: "${evidence.title}"?
+Source: ${evidence.sourceFile || 'Uploaded document'} (${evidence.sourceLocation || 'N/A'})
+Period: ${evidence.period || 'Not provided'}
+Status: ${evidence.status || 'Not provided'}
+Provenance: ${evidence.provenance || 'Not provided'}
+${evidence.formula ? `Formula: ${evidence.formula}` : ''}
+${evidence.excerpt ? `Cited Excerpt: "${evidence.excerpt}"` : ''}
+
+What is the exact financial, legal, and operational risk for ${projectName}? What specific diligence follow-ups, indemnity provisions, or purchase price adjustments should we pursue?`
+
+        window.dispatchEvent(
+            new CustomEvent('mergeworks:open-chat-ask', {
+                detail: {
+                    question,
+                    topic: evidence.title,
+                },
+            })
+        )
+    }
+
     return (
         <div className="fixed inset-0 z-50 flex justify-start bg-black/35" role="presentation" onMouseDown={onClose}>
             <aside
@@ -170,6 +192,17 @@ export default function EvidenceDrawer({ evidence, onClose }: { evidence: Eviden
                         <h2 className="mt-2 text-lg font-semibold leading-7 text-foreground">{evidence.title}</h2>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleAskAiToExplain}
+                            className="flex items-center gap-1.5 text-xs text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 cursor-pointer"
+                            title="Ask AI to explain this finding and risk implications"
+                        >
+                            <Bot className="h-3.5 w-3.5" />
+                            <span>Explain with AI</span>
+                        </Button>
                         <Button
                             type="button"
                             variant="outline"

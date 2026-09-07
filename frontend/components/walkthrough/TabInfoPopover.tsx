@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Info, X, Play, Sparkles, CheckCircle2, Target, UserCheck } from 'lucide-react'
+import { Info, X, Play, Sparkles, CheckCircle2, Target, UserCheck, Bot } from 'lucide-react'
 import type { WorkspaceTab } from '../DealWorkspaceNav'
 import { TAB_METADATA } from './tabMetadata'
 import { useFloatingPosition } from '../../hooks/useFloatingPosition'
@@ -187,6 +187,34 @@ export default function TabInfoPopover({
                                     </span>
                                 </button>
                             )}
+
+                            {/* Action: Ask AI About Tab */}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsOpen(false)
+                                    const projectName = (typeof window !== 'undefined' && (window as any).__mergeworks_active_project_name) || 'this deal'
+                                    const question = `Can you provide an executive briefing on the "${meta.label}" tab for ${projectName}?
+Purpose: ${meta.whatItIsFor}
+Key Diligence Focus: ${meta.suggestedFocus || 'Analytical review and diligence stress-testing'}
+Deliverables: ${meta.keyDeliverables?.join(', ') || 'Financial schedules and findings'}
+
+What are the critical metrics, potential red flags, and key takeaways I should inspect in this workspace?`
+
+                                    window.dispatchEvent(
+                                        new CustomEvent('mergeworks:open-chat-ask', {
+                                            detail: {
+                                                question,
+                                                topic: `${meta.label} Tab Briefing`,
+                                            },
+                                        })
+                                    )
+                                }}
+                                className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer shadow-2xs"
+                            >
+                                <Bot className="h-3.5 w-3.5" />
+                                <span>Ask AI About This Tab</span>
+                            </button>
                         </div>
                     </div>
                 </>,

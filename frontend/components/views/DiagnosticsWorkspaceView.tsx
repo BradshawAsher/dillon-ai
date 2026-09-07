@@ -224,7 +224,7 @@ export function DiagnosticsWorkspaceView({
                         <ActivityFeed documents={activeProjectDocuments} />
                     </div>
                     <div id="diag-public-data" className="scroll-mt-6">
-                        <PublicDataEnrichmentCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
+                        <PublicDataEnrichmentCard key={hydratedDealModel.projectId || activeProjectSynthesis?.projectId || dealName || suggestedProjectName} model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
                     </div>
                 </Suspense>
             )}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { CheckCircle2, ClipboardList, Plus, Trash2 } from 'lucide-react'
+import { Bot, CheckCircle2, ClipboardList, Plus, Trash2 } from 'lucide-react'
 
 import { useGetProjectActionTracker, useSaveProjectActionTracker } from '../hooks/backend/diligence'
 import { Badge } from '../lib/shadcn/badge'
@@ -47,6 +47,29 @@ export default function ManagementQuestionTracker({ projectId, suggestedQuestion
 
     const update = (id: string, changes: Partial<Question>) => setQuestions((current) => current.map((item) => item.id === id ? { ...item, ...changes } : item))
     const answered = questions.filter((item) => item.status === 'Answered').length
+    const hasManagementResponse = questions.some((item) => Boolean(item.response?.trim()) || Boolean(item.thesisImpact?.trim()))
+
+    const handleAskAiToAnalyze = () => {
+        const projectName = (typeof window !== 'undefined' && (window as any).__mergeworks_active_project_name) || 'this deal'
+        const formatted = questions.map((item, idx) => {
+            const resp = item.response?.trim() || '(No response recorded yet)'
+            const impact = item.thesisImpact?.trim() ? `\n   Thesis Impact: ${item.thesisImpact}` : ''
+            const owner = item.owner?.trim() ? ` [Owner: ${item.owner}]` : ''
+            return `Question ${idx + 1} (${item.priority} Priority, ${item.status})${owner}: ${item.question}\nManagement Response: ${resp}${impact}`
+        }).join('\n\n')
+
+        const promptText = `Here is the current Management Question Tracker and responses for ${projectName}:\n\n${formatted}\n\nPlease perform an adversarial diligence review of these questions and management answers:\n1. Highlight unaddressed risks, ambiguous responses, or credibility concerns.\n2. How do these findings alter our investment thesis, debt repayment capacity, or multiple valuation?\n3. Recommend specific escrow terms, indemnity caps, or closing conditions to mitigate unresolved questions.`
+
+        window.dispatchEvent(
+            new CustomEvent('mergeworks:open-chat-ask', {
+                detail: {
+                    question: promptText,
+                    topic: 'Management Questions Analysis',
+                },
+            })
+        )
+    }
+
     return (
         <Card className="overflow-hidden">
             <CardHeader className="border-b border-border bg-card/80">
@@ -67,7 +90,19 @@ export default function ManagementQuestionTracker({ projectId, suggestedQuestion
                 </div>
             </CardHeader>
             <CardContent className="space-y-3 p-4">
-                <div className="flex justify-end">
+                <div className="flex items-center justify-end gap-2">
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleAskAiToAnalyze}
+                        disabled={!hasManagementResponse}
+                        className="gap-1.5 text-xs font-semibold text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                        title={hasManagementResponse ? 'Ask AI to analyze management responses and deal impact' : 'Write a management response or thesis-impact note first'}
+                    >
+                        <Bot className="h-3.5 w-3.5" />
+                        <span>Ask AI to Analyze</span>
+                    </Button>
                     <Button type="button" size="sm" variant="outline" onClick={() => setQuestions((current) => [...current, createQuestion()])}>
                         <Plus className="h-4 w-4" />
                         Add question

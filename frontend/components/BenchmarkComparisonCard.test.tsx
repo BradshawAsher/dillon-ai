@@ -62,7 +62,7 @@ describe('BenchmarkComparisonCard Component', () => {
         }
         const html = renderToStaticMarkup(<BenchmarkComparisonCard model={baseModel} synthesis={hvacSynthesis} />)
         expect(html).toContain('Commercial &amp; residential heating, ventilation')
-        expect(html).toContain('Peer Median:')
+        expect(html).toContain('Internal midpoint:')
         expect(html).toContain('4.2x EV')
     })
 

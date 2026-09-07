@@ -18,10 +18,16 @@ export interface SectorBenchmarkProfile {
     aliases: string[]
 }
 
+export const BENCHMARK_PROVENANCE = {
+    label: 'Illustrative internal benchmark profile',
+    marketAsOf: null,
+    sourceNote: 'Internal illustrative screening ranges. No source dataset or market as-of date is recorded. Validate against current, citable comparables before investment use.',
+} as const
+
 /**
- * Curated Middle-Market & SMB Vertical Industry Benchmark Taxonomy.
- * Benchmarks are calibrated to 25th (low), 50th (median), and 75th (high) percentiles
- * from institutional private equity data, RMA Statement Studies, and BizBuySell transaction data.
+ * Illustrative Middle-Market & SMB Vertical Industry Benchmark Taxonomy.
+ * Low/median/high values are internal screening ranges, not claimed percentiles from a
+ * licensed or live dataset. See BENCHMARK_PROVENANCE and validate before investment use.
  */
 export const SECTOR_BENCHMARKS: Record<string, SectorBenchmarkProfile> = {
     hvac_mep: {

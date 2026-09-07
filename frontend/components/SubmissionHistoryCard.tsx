@@ -1094,6 +1094,15 @@ export default function SubmissionHistoryCard({
                                     const greenFlags = synth.greenFlags || []
                                     const openQuestions = synth.openQuestions || []
                                     const negotiationLevers = synth.negotiationLevers || []
+                                    const openSynthesisEvidence = (title: string, excerpt: string, findingStatus: string) => onOpenEvidence?.({
+                                        title,
+                                        sourceFile: synthTitle || 'Project synthesis',
+                                        sourceLocation: 'Project synthesis',
+                                        excerpt,
+                                        confidence: synth.valuationConfidence || synth.aiConfidence,
+                                        status: findingStatus,
+                                        provenance: 'Project-level synthesis analysis',
+                                    })
 
                                     return (
                                         <div className="space-y-4">
@@ -1166,7 +1175,15 @@ export default function SubmissionHistoryCard({
                                             </div>
 
                                             {/* Executive Recommendation Box */}
-                                            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/[0.06] p-4">
+                                            <button
+                                                type="button"
+                                                onClick={() => openSynthesisEvidence(
+                                                    'Executive recommendation',
+                                                    [synth.finalRecommendation, synth.finalJudgmentSummary].filter(Boolean).join('\n\n') || 'Pending synthesis pass completion.',
+                                                    synth.finalTrafficLight || synth.finalRiskLevel || 'AI-generated'
+                                                )}
+                                                className="w-full rounded-lg border border-emerald-500/30 bg-emerald-500/[0.06] p-4 text-left transition-colors hover:border-emerald-500/50 hover:bg-emerald-500/[0.09]"
+                                            >
                                                 <div className="flex items-center gap-2 text-emerald-400">
                                                     <ShieldCheck className="h-4 w-4 shrink-0" />
                                                     <p className="text-xs font-semibold uppercase tracking-wider">Executive Recommendation</p>
@@ -1179,7 +1196,8 @@ export default function SubmissionHistoryCard({
                                                         {synth.finalJudgmentSummary}
                                                     </p>
                                                 ) : null}
-                                            </div>
+                                                <p className="mt-2 text-[11px] font-medium text-primary">Open evidence and explain with AI</p>
+                                            </button>
 
                                             {/* Valuation Summary */}
                                             <div className="rounded-lg border border-border bg-background p-3">
@@ -1214,6 +1232,7 @@ export default function SubmissionHistoryCard({
                                                     itemCount={redFlags.length}
                                                     className="border-destructive/30 bg-destructive/5"
                                                     emptyLabel="No red flags recorded."
+                                                    onItemClick={(item) => openSynthesisEvidence('Red flag', item, 'Red flag')}
                                                 />
                                             ) : null}
 
@@ -1225,6 +1244,7 @@ export default function SubmissionHistoryCard({
                                                     itemCount={yellowFlags.length}
                                                     className="border-warning/30 bg-warning/5"
                                                     emptyLabel="No yellow flags recorded."
+                                                    onItemClick={(item) => openSynthesisEvidence('Yellow flag', item, 'Yellow flag')}
                                                 />
                                             ) : null}
 
@@ -1236,6 +1256,7 @@ export default function SubmissionHistoryCard({
                                                     itemCount={greenFlags.length}
                                                     className="border-success/30 bg-success/5"
                                                     emptyLabel="No green flags recorded."
+                                                    onItemClick={(item) => openSynthesisEvidence('Green flag / strength', item, 'Green flag')}
                                                 />
                                             ) : null}
 
@@ -1247,6 +1268,7 @@ export default function SubmissionHistoryCard({
                                                     itemCount={openQuestions.length}
                                                     className="border-border bg-background"
                                                     emptyLabel="No open questions recorded."
+                                                    onItemClick={(item) => openSynthesisEvidence('Open diligence question', item, 'Needs review')}
                                                 />
                                             ) : null}
 
@@ -1258,6 +1280,7 @@ export default function SubmissionHistoryCard({
                                                     itemCount={negotiationLevers.length}
                                                     className="border-border bg-background"
                                                     emptyLabel="No negotiation levers recorded."
+                                                    onItemClick={(item) => openSynthesisEvidence('Negotiation lever', item, 'Recommendation')}
                                                 />
                                             ) : null}
 
@@ -1535,6 +1558,20 @@ export default function SubmissionHistoryCard({
                                                         emptyLabel="No AI summary returned."
                                                         defaultOpen
                                                     >
+                                                        {onOpenEvidence ? (
+                                                            <Button type="button" size="sm" variant="outline" onClick={() => onOpenEvidence({
+                                                                title: 'AI Summary',
+                                                                sourceFile: selectedRow.fileName || 'Uploaded document',
+                                                                sourceLocation: 'Document AI summary',
+                                                                excerpt: [aiViewModel.intent, aiViewModel.summary, ...aiViewModel.displayMetrics.map(metric => `${metric.label}: ${metric.value}`)].filter(Boolean).join('\n\n'),
+                                                                provenance: 'Document-level AI analysis',
+                                                                status: 'AI-generated',
+                                                                documentId: selectedRow.storageFileId,
+                                                                documentUrl: selectedRow.storageFileUrl,
+                                                            })}>
+                                                                Open summary and explain with AI
+                                                            </Button>
+                                                        ) : null}
                                                         <div className="space-y-3">
                                                             <div className="space-y-1">
                                                                 {aiViewModel.intent ? (

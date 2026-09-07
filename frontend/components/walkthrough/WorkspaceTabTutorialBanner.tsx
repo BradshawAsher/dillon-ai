@@ -12,9 +12,11 @@ import {
     Info,
     HelpCircle,
     X,
+    Bot,
 } from 'lucide-react'
 import type { WorkspaceTab } from '../DealWorkspaceNav'
 import { TAB_METADATA } from './tabMetadata'
+import TabInfoPopover from './TabInfoPopover'
 import { Badge } from '../../lib/shadcn/badge'
 import { Button } from '../../lib/shadcn/button'
 
@@ -61,9 +63,28 @@ export default function WorkspaceTabTutorialBanner({
         suggestedFocus: 'Diligence evaluation',
     }
 
+    const handleAskAiAboutTab = () => {
+        const projectName = (typeof window !== 'undefined' && (window as any).__mergeworks_active_project_name) || 'this deal'
+        const question = `Can you provide an executive briefing on the "${meta.label}" tab for ${projectName}?
+Purpose: ${meta.whatItIsFor}
+Key Diligence Focus: ${meta.suggestedFocus || 'Analytical review and diligence stress-testing'}
+Deliverables: ${meta.keyDeliverables?.join(', ') || 'Financial schedules and findings'}
+
+What are the critical metrics, potential red flags, and key takeaways I should inspect in this workspace?`
+
+        window.dispatchEvent(
+            new CustomEvent('mergeworks:open-chat-ask', {
+                detail: {
+                    question,
+                    topic: `${meta.label} Tab Briefing`,
+                },
+            })
+        )
+    }
+
     if (isCollapsed) {
         return (
-            <div className={`flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-card/60 px-3.5 py-1.5 text-xs text-muted-foreground backdrop-blur-sm print:hidden ${className}`}>
+            <div className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 bg-card/60 px-3.5 py-1.5 text-xs text-muted-foreground backdrop-blur-sm print:hidden ${className}`}>
                 <div className="flex items-center gap-2 min-w-0">
                     <span className="inline-flex items-center gap-1 font-semibold text-foreground">
                         <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -74,6 +95,19 @@ export default function WorkspaceTabTutorialBanner({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                    <TabInfoPopover tabId={activeTab} onStartTour={onStartTabTour} />
+
+                    <button
+                        type="button"
+                        onClick={handleAskAiAboutTab}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 cursor-pointer"
+                        title={`Ask AI for an executive briefing on the ${meta.label} tab`}
+                        aria-label="Ask AI About Tab"
+                    >
+                        <Bot className="h-3 w-3" />
+                        <span className="hidden md:inline">Ask AI</span>
+                    </button>
+
                     {onStartTabTour && (
                         <button
                             type="button"
@@ -124,6 +158,8 @@ export default function WorkspaceTabTutorialBanner({
 
                 {/* Right: Actions (Tutorial, Guide, Collapse) */}
                 <div className="flex flex-wrap items-center gap-2 shrink-0 pt-1 lg:pt-0">
+                    <TabInfoPopover tabId={activeTab} onStartTour={onStartTabTour} />
+
                     {onStartTabTour && (
                         <Button
                             type="button"
@@ -139,6 +175,18 @@ export default function WorkspaceTabTutorialBanner({
                             </Badge>
                         </Button>
                     )}
+
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAskAiAboutTab}
+                        className="gap-1.5 text-xs font-semibold text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 cursor-pointer"
+                        title={`Ask AI for an executive briefing on the ${meta.label} tab`}
+                    >
+                        <Bot className="h-3.5 w-3.5" />
+                        <span>Ask AI About Tab</span>
+                    </Button>
 
                     <Button
                         type="button"

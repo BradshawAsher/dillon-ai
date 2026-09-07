@@ -284,7 +284,7 @@ export function DiligenceWorkspaceView({
                 <Suspense fallback={null}>
                     <DealTimelineCard documents={activeProjectDocuments} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
                     <BuyerProfileCard model={hydratedDealModel} synthesis={activeProjectSynthesis} />
-                    <IndustryBenchmarksCard />
+                    <IndustryBenchmarksCard model={hydratedDealModel} synthesis={activeProjectSynthesis} projectName={dealName || suggestedProjectName} />
                     {(() => {
                         const measured = sumMeasuredCost({
                             documents: activeProjectDocuments,

@@ -12,6 +12,7 @@ import DealStructureVisualCard from './DealStructureVisualCard'
 import LeverageSafetyCard from './LeverageSafetyCard'
 import NegotiationValuationBridgeCard from './NegotiationValuationBridgeCard'
 import ComparableTransactionsCard from './ComparableTransactionsCard'
+import PublicDataEnrichmentCard from './PublicDataEnrichmentCard'
 import { ValuationWorkspaceView } from './views/ValuationWorkspaceView'
 import { ReturnsWorkspaceView } from './views/ReturnsWorkspaceView'
 import { GrowthWorkspaceView } from './views/GrowthWorkspaceView'
@@ -122,6 +123,13 @@ const baseSynthesis: ProjectSynthesisItem = {
 } as unknown as ProjectSynthesisItem
 
 describe('Data Lineage & Origin Badges Integration', () => {
+    it('labels unfinished web research and disables its controls', () => {
+        const html = renderToStaticMarkup(<PublicDataEnrichmentCard model={baseModel as DealModel} projectName="Example Co" />)
+        expect(html).toContain('Live web search is not yet implemented')
+        expect(html).toMatch(/<input[^>]*disabled=""/)
+        expect(html).toMatch(/<button[^>]*disabled=""[^>]*>[\s\S]*?Web research coming soon/)
+        expect(html).not.toContain('Research with AI')
+    })
     it('ValuationGapCard labels user-entered asking price, calculated fair value, and growth assumptions', () => {
         const html = renderToStaticMarkup(<ValuationGapCard model={baseModel} synthesis={baseSynthesis} />)
         expect(html).toContain('data-origin-badge="user_entered"')
@@ -173,7 +181,7 @@ describe('Data Lineage & Origin Badges Integration', () => {
     it('ScenarioComparisonCard marks scenarios as assumptions and exit results as calculated', () => {
         const html = renderToStaticMarkup(<ScenarioComparisonCard model={baseModel} />)
         expect(html).toContain('Multi-Scenario Projection')
-        expect(html).toContain('Scenario Model')
+        expect(html.match(/data-origin-badge="assumption"/g)?.length).toBeGreaterThanOrEqual(4)
         expect(html).toContain('data-origin-badge="calculated"')
         expect(html).toContain('Year 5 revenue / EBITDA')
     })

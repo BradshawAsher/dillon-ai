@@ -12,6 +12,7 @@ import {
     detectSector,
     getSectorProfile,
     SECTOR_LIST,
+    BENCHMARK_PROVENANCE,
     type SectorBenchmarkProfile,
 } from '../utils/verticalBenchmarks'
 
@@ -192,7 +193,7 @@ export default function BenchmarkComparisonCard({ model, synthesis }: Props) {
                         {sectorProfile.description}
                     </p>
                     <Badge variant="outline" className="text-[10px] font-medium border-primary/30 text-primary bg-primary/5">
-                        Peer Median: {sectorProfile.metrics.entryMultiple.median.toFixed(1)}x EV • {(sectorProfile.metrics.grossMargin.median * 100).toFixed(0)}% Gross • {(sectorProfile.metrics.ebitdaMargin.median * 100).toFixed(0)}% EBITDA
+                        Internal midpoint: {sectorProfile.metrics.entryMultiple.median.toFixed(1)}x EV • {(sectorProfile.metrics.grossMargin.median * 100).toFixed(0)}% Gross • {(sectorProfile.metrics.ebitdaMargin.median * 100).toFixed(0)}% EBITDA
                     </Badge>
                 </div>
             </CardHeader>
@@ -221,7 +222,7 @@ export default function BenchmarkComparisonCard({ model, synthesis }: Props) {
                                 <div
                                     className="absolute top-0 bottom-0 w-1 -ml-0.5 bg-foreground rounded-full shadow-xs z-10"
                                     style={{ left: `${medianPosition}%` }}
-                                    title={`Peer Median: ${formatValue(row.benchmark.median, row.unit)}`}
+                                    title={`Internal midpoint: ${formatValue(row.benchmark.median, row.unit)}`}
                                 />
                                 <div
                                     className="absolute top-0.5 bottom-0.5 w-3 h-3 rounded-full bg-primary border-2 border-background ring-2 ring-primary/30 shadow-md z-20"
@@ -230,9 +231,9 @@ export default function BenchmarkComparisonCard({ model, synthesis }: Props) {
                                 />
                             </div>
                             <div className="flex items-center justify-between text-[9px] text-muted-foreground font-mono">
-                                <span>25th Pct: {formatValue(row.benchmark.low, row.unit)}</span>
-                                <span className="text-foreground font-medium">Median: {formatValue(row.benchmark.median, row.unit)}</span>
-                                <span>75th Pct: {formatValue(row.benchmark.high, row.unit)}</span>
+                                <span>Low: {formatValue(row.benchmark.low, row.unit)}</span>
+                                <span className="text-foreground font-medium">Midpoint: {formatValue(row.benchmark.median, row.unit)}</span>
+                                <span>High: {formatValue(row.benchmark.high, row.unit)}</span>
                             </div>
                         </div>
                     )
@@ -240,8 +241,8 @@ export default function BenchmarkComparisonCard({ model, synthesis }: Props) {
 
                 <div className="rounded-lg bg-muted/40 p-3 mt-3 border border-border/50">
                     <p className="text-[11px] text-muted-foreground">
-                        Benchmarks calibrated against <strong>{sectorProfile.displayName}</strong> M&amp;A transaction records ($1M–$50M EV).
-                        The dot marks this deal's position across the 25th–75th percentile band. The vertical line marks the peer median. Green end indicates favorable buyer terms.
+                        <strong>{BENCHMARK_PROVENANCE.label}: {sectorProfile.displayName}.</strong> {BENCHMARK_PROVENANCE.sourceNote}
+                        The dot marks this deal's position across the internal range. The vertical line marks its midpoint.
                     </p>
                 </div>
             </CardContent>

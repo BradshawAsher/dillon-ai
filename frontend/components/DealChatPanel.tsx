@@ -24,6 +24,7 @@ import type { ManualDealFormData } from '../utils/manualDealIntake'
 import { classifyQuestionnaireFile, questionnaireDraftFromImport, questionnaireDraftValues, type QuestionnaireDraft } from '../utils/questionnaireDraft'
 import { parseQuestionnaireFile } from '../utils/questionnaireImport'
 import { buildUnifiedMathChecks } from '../utils/unifiedMathChecks'
+import { BENCHMARK_PROVENANCE, detectSector, getSectorProfile } from '../utils/verticalBenchmarks'
 
 export type ResponseTier = 'cloud_ai' | 'direct_llm' | 'local_heuristics'
 
@@ -304,7 +305,7 @@ function buildContext(synthesis: ProjectSynthesisItem | undefined, model: DealMo
 - Available Tabs & Primary Anchors:
   - tab:overview (anchors: #deal-overview, #overview-snapshot, #overview-health, #overview-war-room, #overview-actions, #overview-timeline)
   - tab:analysis (anchors: #analysis-deal-on-a-page, #analysis-scorecard, #analysis-ebitda-quality, #analysis-revenue-bridge, #analysis-cohort-retention, #analysis-breakeven, #analysis-market-comps, #analysis-financing-scenarios, #analysis-asset-comp, #analysis-monte-carlo, #analysis-risk-matrix, #analysis-key-person, #analysis-seller-qa, #analysis-mgmt-questions, #analysis-closing-checklist, #analysis-term-sheet, #analysis-dd-requests)
-  - tab:diagnostics (anchors: #deal-diagnostics, #diag-thesis, #diag-decision, #diag-quick-wins, #diag-strengths, #diag-risk-summary, #diag-risk-matrix, #diag-key-person, #diag-owner-dep, #diag-diligence-comp, #diag-closing-checklist, #diag-seller-qa, #diag-mgmt-questions, #diag-playbook, #diag-negotiation-impact, #diag-timeline, #diag-investor-readiness, #diag-term-sheet, #diag-dd-requests)
+  - tab:diagnostics (anchors: #deal-diagnostics, #diag-thesis, #diag-decision, #diag-quick-wins, #diag-strengths, #diag-risk-summary, #diag-risk-matrix, #diag-key-person, #diag-owner-dep, #diag-diligence-comp, #diag-closing-checklist, #diag-seller-qa, #diag-mgmt-questions, #diag-playbook, #diag-negotiation-impact, #diag-timeline, #diag-investor-readiness, #diag-term-sheet, #diag-dd-requests, #diag-public-data)
   - tab:diligence (anchors: #diligence-documents, #diligence-quality, #diligence-master-math-checks, #deal-model-readiness, #add-back-quality-card, #customer-concentration-card, #cohort-retention-card, #diligence-project-synth)
   - tab:synthesis (anchors: #synthesis-judgment, #synthesis-valuation, #synthesis-red-flags)
   - tab:structure (anchors: #structure-sources-uses, #structure-debt-schedule, #structure-covenants, #structure-stack, #structure-leverage, #structure-dscr, #structure-financing, #structure-working-capital-peg)
@@ -2304,7 +2305,7 @@ export const CHAT_AGENT_OPENAI_TOOLS = [
         type: 'function',
         function: {
             name: 'smb_valuation_benchmarks',
-            description: 'Look up standard SMB valuation multiples (EV/EBITDA, EV/Revenue), target profit margins, key risk drivers, and SBA underwriting limits for specific industries (HVAC, SaaS, Healthcare, Dental, Manufacturing, E-Commerce, Professional Services).',
+            description: 'Look up illustrative internal SMB screening ranges by industry. These are not live market comparables and must be identified as internal heuristics requiring analyst validation.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -2440,6 +2441,26 @@ export const CHAT_AGENT_OPENAI_TOOLS = [
                 }
             }
         }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'web_intelligence_enrichment',
+            description: 'Request cited public web intelligence for a target company. This client-side tool cannot browse; it must return an explicit unavailable result unless a server-side research tool is configured. Never fabricate ratings, traffic, headcount, technologies, or legal findings.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    domain: {
+                        type: 'string',
+                        description: 'Company website domain or URL (e.g. "apexplumbing.com" or "apexplumbing")'
+                    },
+                    companyName: {
+                        type: 'string',
+                        description: 'Optional company name if domain is not known'
+                    }
+                }
+            }
+        }
     }
 ]
 
@@ -2474,7 +2495,7 @@ export const CHAT_AGENT_ANTHROPIC_TOOLS = [
     },
     {
         name: 'smb_valuation_benchmarks',
-        description: 'Look up standard SMB valuation multiples (EV/EBITDA, EV/Revenue), target profit margins, key risk drivers, and SBA underwriting limits for specific industries (HVAC, SaaS, Healthcare, Dental, Manufacturing, E-Commerce, Professional Services).',
+        description: 'Look up illustrative internal SMB screening ranges by industry. These are not live market comparables and must be identified as internal heuristics requiring analyst validation.',
         input_schema: {
             type: 'object',
             properties: {
@@ -2586,6 +2607,23 @@ export const CHAT_AGENT_ANTHROPIC_TOOLS = [
                 sellerNotePercent: { type: 'number', description: 'Seller financing note percentage (e.g. 10 for 10%)' },
                 interestRate: { type: 'number', description: 'Annual interest rate percentage for senior debt' },
                 reason: { type: 'string', description: 'Explanation or source citation for the proposed values' }
+            }
+        }
+    },
+    {
+        name: 'web_intelligence_enrichment',
+        description: 'Request cited public web intelligence for a target company. This client-side tool cannot browse; it must return an explicit unavailable result unless a server-side research tool is configured. Never fabricate ratings, traffic, headcount, technologies, or legal findings.',
+        input_schema: {
+            type: 'object',
+            properties: {
+                domain: {
+                    type: 'string',
+                    description: 'Company website domain or URL (e.g. "apexplumbing.com" or "apexplumbing")'
+                },
+                companyName: {
+                    type: 'string',
+                    description: 'Optional company name if domain is not known'
+                }
             }
         }
     }
@@ -2718,72 +2756,15 @@ export function executeClientSideTool(name: string, args: any, context: ClientSi
     }
 
     if (name === 'smb_valuation_benchmarks') {
-        const q = String(args.industry || args.sector || args.query || '').toLowerCase()
-        const benchmarks: Record<string, any> = {
-            hvac_trades: {
-                name: 'HVAC, Plumbing, Electrical & Mechanical Trades',
-                medianEvEbitda: '3.5x - 5.5x',
-                medianEvRevenue: '0.8x - 1.4x',
-                targetEbitdaMargin: '15% - 22%',
-                keyDrivers: ['Recurring maintenance agreements (>30% of revenue)', 'Technician retention rate', 'Commercial vs Residential mix'],
-                sbaUnderwritingMaxLeverage: '3.5x Senior SBA 7(a) + 0.5x-1.0x Seller Note',
-            },
-            saas: {
-                name: 'B2B Micro-SaaS / Software',
-                medianEvEbitda: '5.0x - 8.0x (or 2.5x - 5.0x ARR for growing SaaS)',
-                medianEvRevenue: '2.5x - 5.0x ARR',
-                targetEbitdaMargin: '20% - 35%',
-                keyDrivers: ['Net Revenue Retention (>100%)', 'Gross Margins (>75%)', 'Customer Concentration (<15% max single customer)'],
-                sbaUnderwritingMaxLeverage: '2.5x Senior + Buyer Equity (Asset-light)',
-            },
-            healthcare_dental: {
-                name: 'Healthcare, Dental & Veterinary Clinics',
-                medianEvEbitda: '4.0x - 6.5x',
-                medianEvRevenue: '1.0x - 1.8x',
-                targetEbitdaMargin: '18% - 28%',
-                keyDrivers: ['Provider employment contracts & non-competes', 'Payer mix (Private vs Medicaid)', 'Equipment age & capex'],
-                sbaUnderwritingMaxLeverage: '3.75x Senior SBA 7(a) 10-year term',
-            },
-            manufacturing: {
-                name: 'Light Precision Manufacturing & Fabrication',
-                medianEvEbitda: '3.5x - 5.0x',
-                medianEvRevenue: '0.7x - 1.2x',
-                targetEbitdaMargin: '12% - 20%',
-                keyDrivers: ['Customer concentration (<20% top client)', 'Equipment replacement cycle / capex', 'Proprietary tooling/IP'],
-                sbaUnderwritingMaxLeverage: '3.5x Senior + Equipment financing',
-            },
-            ecommerce_dtc: {
-                name: 'E-Commerce, Amazon FBA & DTC Brands',
-                medianEvEbitda: '2.5x - 4.0x SDE/EBITDA',
-                medianEvRevenue: '0.5x - 1.0x Revenue',
-                targetEbitdaMargin: '12% - 20%',
-                keyDrivers: ['Platform risk (Amazon TOS)', 'SKU concentration', 'Ad spend ROAS & TACoS trend'],
-                sbaUnderwritingMaxLeverage: '2.5x Senior max due to inventory volatility',
-            },
-            professional_services: {
-                name: 'Professional Services, Accounting & IT Consulting',
-                medianEvEbitda: '3.0x - 4.5x',
-                medianEvRevenue: '0.8x - 1.3x',
-                targetEbitdaMargin: '15% - 25%',
-                keyDrivers: ['Key-person dependency on founder', 'Client retention rate', 'Billable utilization'],
-                sbaUnderwritingMaxLeverage: '3.0x Senior max',
-            }
-        }
-        for (const [key, val] of Object.entries(benchmarks)) {
-            if (q.includes(key.replace('_', ' ')) || q.includes(key.split('_')[0]) || val.name.toLowerCase().includes(q)) {
-                return val
-            }
-        }
+        const requestedIndustry = String(args.industry || args.sector || args.query || '')
+        const sector = getSectorProfile(detectSector(requestedIndustry))
         return {
-            generalSMBBenchmark: {
-                medianEvEbitda: '3.0x - 5.0x adjusted EBITDA / SDE',
-                medianEvRevenue: '0.6x - 1.5x Revenue',
-                targetEbitdaMargin: '15% - 25%',
-                targetGrossMargin: '>40%',
-                sba7aDebtCoverageMinimum: '1.25x DSCR',
-                maxSafeSeniorLeverage: '3.5x EBITDA',
-                availableSectors: Object.keys(benchmarks)
-            }
+            requestedIndustry,
+            detectedSector: sector.displayName,
+            description: sector.description,
+            ranges: sector.metrics,
+            provenance: BENCHMARK_PROVENANCE,
+            warning: 'Illustrative internal screening ranges only. Do not present them as live, licensed, verified, or transaction-comparable market data. Validate industry, company size, geography, period, and source before investment use.',
         }
     }
 
@@ -3080,6 +3061,20 @@ export function executeClientSideTool(name: string, args: any, context: ClientSi
             reason: args.reason || 'Extracted from user conversation',
             actionPrompt: 'User can apply these values to the Quick Deal Questionnaire with one click.',
             guidance: 'Direct user to [Quick Deal Questionnaire](tab:structure#manual-deal-intake-card).'
+        }
+    }
+
+    if (name === 'web_intelligence_enrichment') {
+        const rawDomain = String(args.domain || args.companyName || context.projectName || 'company.com').trim().toLowerCase()
+        const cleanDomain = rawDomain.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/[^a-z0-9.-]/g, '')
+        const effectiveDomain = cleanDomain.includes('.') ? cleanDomain : `${cleanDomain || 'company'}.com`
+        return {
+            success: false,
+            status: 'server_search_required',
+            domain: effectiveDomain,
+            message: 'This direct browser/BYOK execution path has no live web-search capability. No public facts were generated. Use the hosted Deal Assistant with its configured server-side search tool, or configure a supported search provider.',
+            requiredOutput: ['source URL for every factual claim', 'access date', 'clear fact/estimate/unknown labels', 'no absence-of-litigation conclusion from an empty search'],
+            guidance: 'Public research is in [Risk & Playbook > Public & Web Intelligence](tab:diagnostics#diag-public-data). Live search is currently unavailable.'
         }
     }
 
@@ -4800,8 +4795,8 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
     // Global listener for 1-click explanation requests from CardExplainerPopover
     useEffect(() => {
         const handleAskAi = (e: Event) => {
-            const customEvent = e as CustomEvent<{ question: string; topic?: string }>
-            const question = customEvent.detail?.question
+            const customEvent = e as CustomEvent<{ question?: string; prompt?: string; topic?: string }>
+            const question = customEvent.detail?.question || customEvent.detail?.prompt
             if (!question) return
             setIsOpen(true)
             setUnreadCount(0)
@@ -4811,6 +4806,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         }
 
         window.addEventListener('mergeworks:open-chat-ask', handleAskAi)
+        window.addEventListener('mergeworks:open-chat-with-prompt', handleAskAi)
         const handleOpenChat = () => {
             setIsOpen(true)
             setUnreadCount(0)
@@ -4827,6 +4823,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
         window.addEventListener('mergeworks:clear-chat', handleClearChat)
         return () => {
             window.removeEventListener('mergeworks:open-chat-ask', handleAskAi)
+            window.removeEventListener('mergeworks:open-chat-with-prompt', handleAskAi)
             window.removeEventListener('mergeworks:open-chat', handleOpenChat)
             window.removeEventListener('mergeworks:close-chat', handleCloseChat)
             window.removeEventListener('mergeworks:clear-chat', handleClearChat)
@@ -5604,6 +5601,9 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                         className="relative border-t border-border p-3 pr-8 bg-background/60 select-none cursor-move"
                         title="Click and drag to move window"
                     >
+                        <p className="mb-2 text-[11px] text-muted-foreground">
+                            Live web search is not yet available. Answers are not verified against current websites.
+                        </p>
                         {isDebateModeActive && (
                             <div className="mb-2 flex items-center justify-between rounded-md bg-purple-500/15 px-2.5 py-1 text-[11px] font-medium text-purple-900 dark:text-purple-200 border border-purple-500/30 shadow-2xs">
                                 <span className="flex items-center gap-1.5">
