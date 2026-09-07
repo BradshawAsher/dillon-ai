@@ -31,8 +31,8 @@ test.describe('Deal War Room Bot & Vertical Industry Benchmarks', () => {
         const webhookInput = page.locator('#webhook-url')
         await expect(webhookInput).toBeVisible({ timeout: 5_000 })
 
-        // 5. Test Slack URL detection
-        await webhookInput.fill('https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX')
+        // Use mock test URL (does not match GitHub secret scanner regex)
+        await webhookInput.fill('https://hooks.slack.com/services/MOCK_ORG/MOCK_CHANNEL/mock_test_token_12345')
         await expect(page.getByText('Slack Detected')).toBeVisible()
 
         // 6. Test Microsoft Teams URL detection
