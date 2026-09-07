@@ -177,7 +177,7 @@ Candidate Fact vs. Current Best Fact:
 ### 2. Deal Analysis Tab (`DealAnalysisWorkspaceView.tsx`)
 - Computes Gross Margin $\% = \frac{\text{Gross Profit}}{\text{Revenue}} \times 100$.
 - Computes EBITDA Margin $\% = \frac{\text{EBITDA}}{\text{Revenue}} \times 100$.
-- Cross-examines stated Net Income against verified EBITDA add-backs.
+- Supplies cited earnings facts to the separate add-back review; support classification still depends on line-item evidence and does not become verified merely because an aggregate total was extracted.
 
 ### 3. Diagnostics Tab & Evidence Drawer (`DiagnosticsWorkspaceView.tsx`)
 - Renders the full **Auditable Fact Matrix**.
@@ -200,8 +200,8 @@ Candidate Fact vs. Current Best Fact:
 
 | File Path | Core Function / Responsibility |
 | :--- | :--- |
-| [`frontend/utils/documentedFacts.ts`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/frontend/utils/documentedFacts.ts) | `deriveDocumentedFacts()`, `parseMagnitudeMoney()`, `isBetter()`, `periodRank()` |
-| [`frontend/utils/diligenceDashboardUtils.ts`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/frontend/utils/diligenceDashboardUtils.ts) | `hydrateModelFactsFromDocuments()`, `buildReturnsDisplayModel()` |
-| [`frontend/utils/financialMetrics.ts`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/frontend/utils/financialMetrics.ts) | `resolveFinancialMetricsForProject()`, benchmark ground truth fallback map |
-| [`frontend/utils/crossDocumentConflicts.ts`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/frontend/utils/crossDocumentConflicts.ts) | `detectContradictions()`, multi-period variance alerts |
-| [`frontend/utils/evidence.ts`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/frontend/utils/evidence.ts) | `parseDocumentedFacts()`, evidence drawer data formatting |
+| [`frontend/utils/documentedFacts.ts`](frontend/utils/documentedFacts.ts) | `deriveDocumentedFacts()`, `parseMagnitudeMoney()`, `isBetter()`, `periodRank()` |
+| [`frontend/utils/diligenceDashboardUtils.ts`](frontend/utils/diligenceDashboardUtils.ts) | `hydrateModelFactsFromDocuments()`, `buildReturnsDisplayModel()` |
+| [`frontend/utils/financialMetrics.ts`](frontend/utils/financialMetrics.ts) | `resolveFinancialMetricsForProject()`, benchmark ground truth fallback map |
+| [`frontend/utils/crossDocumentConflicts.ts`](frontend/utils/crossDocumentConflicts.ts) | `detectContradictions()`, multi-period variance alerts |
+| [`frontend/utils/evidence.ts`](frontend/utils/evidence.ts) | `parseDocumentedFacts()`, evidence drawer data formatting |

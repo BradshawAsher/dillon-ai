@@ -528,10 +528,10 @@ export const CARD_DESCRIPTIONS: Record<string, CardDescription> = {
     'data-quality-checks': {
         title: 'Data Quality & Reconciliation Checks',
         category: 'Data Integrity',
-        whatItIs: 'Automated reconciliation verifying that P&L revenues match corporate bank deposits and tax return gross receipts.',
-        calculation: 'Mathematical variance tolerance (typically < 2%) across P&L, Tax Schedule C / Form 1120S, and Bank Statements.',
-        diligenceImpact: 'Detects fraudulent or dual-book accounting before funds are committed to legal diligence.',
-        benchmarkOrTarget: 'Zero material variance between Tax Returns and P&L',
+        whatItIs: 'Automated arithmetic identities within a document plus comparisons of the same canonical metric and period across independently uploaded documents.',
+        calculation: 'Uses a 2% tolerance when supported values are comparable. A bank-deposit or tax-return tie appears only when the relevant numeric metric and period were actually extracted.',
+        diligenceImpact: 'Surfaces source inconsistencies and possible extraction errors for citation-level review before deeper diligence.',
+        benchmarkOrTarget: 'No unexplained material variance among comparable source facts',
     },
     'math-checks': {
         title: 'Deterministic Math & Formula Checks',

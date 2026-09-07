@@ -214,18 +214,19 @@ export default function BenchmarkComparisonCard({ model, synthesis }: Props) {
                                     <span className={`text-[10px] font-semibold ${grade.color}`}>{grade.label}</span>
                                 </div>
                             </div>
-                            <div className="relative h-3.5 rounded-full bg-gradient-to-r from-red-100 via-amber-100 to-green-100 dark:from-red-950/40 dark:via-amber-950/40 dark:to-green-950/40 overflow-hidden border border-border/30">
+                            <div className="relative h-4 rounded-full bg-gradient-to-r from-red-100 via-amber-100 to-green-100 dark:from-red-950/40 dark:via-amber-950/40 dark:to-green-950/40 overflow-hidden border border-border/40 shadow-inner">
                                 {!row.higherIsBetter && (
                                     <div className="absolute inset-0 rounded-full bg-gradient-to-r from-green-100 via-amber-100 to-red-100 dark:from-green-950/40 dark:via-amber-950/40 dark:to-red-950/40" />
                                 )}
                                 <div
-                                    className="absolute top-0 bottom-0 w-0.5 bg-foreground/60 z-10"
+                                    className="absolute top-0 bottom-0 w-1 -ml-0.5 bg-foreground rounded-full shadow-xs z-10"
                                     style={{ left: `${medianPosition}%` }}
                                     title={`Peer Median: ${formatValue(row.benchmark.median, row.unit)}`}
                                 />
                                 <div
-                                    className="absolute top-0.5 bottom-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background shadow-md z-20"
-                                    style={{ left: `calc(${position}% - 5px)` }}
+                                    className="absolute top-0.5 bottom-0.5 w-3 h-3 rounded-full bg-primary border-2 border-background ring-2 ring-primary/30 shadow-md z-20"
+                                    style={{ left: `calc(${position}% - 6px)` }}
+                                    title={`This Deal: ${row.value !== null ? formatValue(row.value, row.unit) : 'N/A'}`}
                                 />
                             </div>
                             <div className="flex items-center justify-between text-[9px] text-muted-foreground font-mono">

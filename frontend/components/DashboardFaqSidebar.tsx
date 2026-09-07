@@ -144,7 +144,7 @@ export default function DashboardFaqSidebar({
             category: 'diligence',
             categoryLabel: 'Deal Analysis',
             question: 'What is Portfolio Synthesis and how do I trigger it?',
-            answer: 'Portfolio Synthesis runs a multi-doc pass to cross-check P&L revenue against bank deposits, calculate debt coverage, and generate the IC deal memo. Click "Run Full Portfolio Synthesis" on the Synthesis tab.',
+            answer: 'Portfolio Synthesis runs a multi-document AI pass over the available findings, produces project-level risks and recommendations, and generates the IC deal memo. Deterministic cross-document ties appear only when two files contain the same extracted metric and period; debt coverage remains a calculated underwriting output.',
             actionLabel: 'Open Synthesis Tab',
             targetTab: 'synthesis',
             badge: 'IC DEAL MEMO',

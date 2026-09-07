@@ -29,7 +29,7 @@ This document serves as the formal **Edge Case Handling Guide & Evaluation FAQ**
   2. **Per-Doc Score**: $10 \text{ (traffic light match)} + \text{round}(10 \times 0.75) = 18 / 20 \text{ pts (90\%)}$.
   3. **90/10 Weighted Score**:
      $$S_{\text{risk}} = (0.90 \times 20) + (0.10 \times 18) = 18.0 + 1.8 = \mathbf{19.8 / 20 \text{ pts (99\%)}}$$
-* **Engineering Rationale**: Single-file intake gaps deduct a minor fraction of the 10% per-document intake component, while the 90% Synthesizer component ensures the overall project risk matrix remains complete.
+* **Implementation note**: Single-file intake gaps deduct a minor fraction of the 10% per-document component. The current 90% term is a fixed dimension-max baseline retained for historical score compatibility; it is not a separately measured synthesizer result.
 
 ---
 
@@ -45,7 +45,7 @@ This document serves as the formal **Edge Case Handling Guide & Evaluation FAQ**
 * **Scenario**: Excel spreadsheets (e.g. `ConversionXL LLC_Profit and Loss by Month.xlsx`) contain 24 monthly columns (Jan 2023 ... Dec 2024). Single-file extraction parses monthly totals instead of full annual FY2024 totals.
 * **How the Scorer Handles It**:
   1. Fact comparison matches metrics by both **Metric Name AND Reporting Year** (`extractYear(period)`).
-  2. Single-file month/annual misalignment drops the 10% per-doc facts component to partial credit (3 pts), while the 90% Synthesizer component reconciles monthly columns into clean annual FY totals (10 pts).
+  2. Single-file month/annual misalignment drops the 10% per-doc facts component to partial credit (3 pts); the current 90% fixed baseline remains at the dimension maximum.
   3. **Resulting Score**: $0.90(10) + 0.10(3) = \mathbf{9.3 / 10 \text{ pts (93\%)}}$.
 
 ---
@@ -54,12 +54,9 @@ This document serves as the formal **Edge Case Handling Guide & Evaluation FAQ**
 
 ---
 
-### Q1: "Why use a 90% Synthesizer / 10% Per-Doc split across all 7 dimensions?"
+### Q1: "Why does the scorer use a 90% baseline / 10% per-document split across all 7 dimensions?"
 > **Answer**:  
-> In real-world M&A due diligence, buyers and deal teams evaluate the **consolidated deal room** (the project synthesizer deliverable), not isolated raw spreadsheets. Individual Excel files contain single-file noise (24 monthly columns vs annual totals).  
-> - **90% Weight**: Evaluates the primary deliverable (the reconciled deal room workspace).  
-> - **10% Weight**: Evaluates single-file intake parser accuracy.  
-> This balance ensures the benchmark reflects real-world M&A utility while penalizing parsing flaws appropriately.
+> This is a historical compatibility formula in the current implementation. The **90% term is the dimension maximum**, while the **10% term measures the per-document result**. It should not be presented as an independently measured synthesizer score. Cross-document conflict performance is the separate project-level dimension. A future scorer redesign could replace the fixed baseline with a real synthesis score, but that is not how today's numbers are computed.
 
 ---
 
@@ -76,7 +73,7 @@ This document serves as the formal **Edge Case Handling Guide & Evaluation FAQ**
 
 ### Q3: "Is the evaluation suite automated in CI/CD?"
 > **Answer**:  
-> Yes! `.github/workflows/eval-regression.yml` automatically runs `npx tsx scripts/run-evals.ts` on every git push, verifies the 80% regression gate, auto-refreshes [`FAILURE_CASES.md`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/FAILURE_CASES.md), and publishes live results directly to Supabase `public.eval_runs`.
+> Yes. `.github/workflows/eval-regression.yml` runs on pull requests and pushes to `main` or `master`, enforces the 80% regression gate, refreshes the generated failure/report files in the runner artifact, and attempts Supabase publishing only when the required Supabase environment is configured.
 
 ---
 
@@ -86,7 +83,7 @@ This document serves as the formal **Edge Case Handling Guide & Evaluation FAQ**
 
 ### Q1: "Why should an M&A buyer trust MergeWorks over manual spreadsheet review?"
 > **Answer**:  
-> MergeWorks achieves **98% Overall Accuracy** and a **100% Document Pass Rate** across 25 benchmarked financial deal documents. It automatically cross-reconciles P&Ls, Balance Sheets, Add-Back Schedules, and AR Aging reports to surface hidden liabilities, customer concentration risks, and EBITDA adjustments in seconds.
+> MergeWorks exposes its current benchmark results and per-dimension weaknesses in the Evals & Harness tab rather than relying on a fixed marketing percentage. The benchmark tests extraction, risk recall, valuation, returned math-check status, recommendations, and project conflict detection against versioned ground truth. It complements manual review; it does not prove that every unseen document or accounting judgment will be correct.
 
 ---
 

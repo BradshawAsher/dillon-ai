@@ -1,3 +1,21 @@
+# Math Check Documentation Reconciliation (2026-09-07)
+
+## Verified root causes
+
+- The primary deterministic-math guide still names reconciliation v3 even though the active per-document contract is v5.
+- The broader formulas guide names a removed `amortizationYears` default, describes percentage normalization too narrowly, and documents the old cross-document false-positive penalty.
+- The eval documentation mixes the legacy 70% display label with the actual 80% document and CI regression gates.
+- Two in-product explanations overstate what deterministic checks prove and describe the pre-D&A operating-expense identity incorrectly.
+
+## Targeted changes and verification
+
+1. Reconcile the active math, eval, chatbot, and card-help copy with the current TypeScript and published workflow contract.
+2. Document the boundary between arithmetic verification, calculated underwriting outputs, add-back support classification, and source-value truth.
+3. Make the eval summary status use its configured regression threshold so reports cannot say `SHIP-READY` while the CI gate fails; add a regression assertion.
+4. Run the focused eval test, chatbot test, TypeScript typecheck, and documentation-link checks. Keep the work uncommitted until requested.
+
+---
+
 # Financial Math Audit Follow-up (2026-09-06)
 
 ## Verified root causes

@@ -11,7 +11,7 @@ type Props = {
     model: DealModel
     synthesis?: ProjectSynthesisItem
     documents: SubmissionHistoryItem[]
-    onNavigate?: (target: string) => void
+    onNavigate?: (target: string, anchorId?: string) => void
 }
 
 type ActionItem = {
@@ -20,6 +20,7 @@ type ActionItem = {
     priority: 'high' | 'medium' | 'low'
     icon: React.ReactNode
     target?: string
+    anchorId?: string
 }
 
 export default function NextActionsCard({ model, synthesis, documents, onNavigate }: Props) {
@@ -87,6 +88,7 @@ export default function NextActionsCard({ model, synthesis, documents, onNavigat
             priority: 'medium',
             icon: <MessageCircleQuestion className="h-4 w-4" />,
             target: 'synthesis',
+            anchorId: 'synthesis-management-questions',
         })
     }
 
@@ -136,7 +138,7 @@ export default function NextActionsCard({ model, synthesis, documents, onNavigat
                             key={i}
                             type="button"
                             className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 ${priorityColors[action.priority]}`}
-                            onClick={() => action.target && onNavigate?.(action.target)}
+                            onClick={() => action.target && onNavigate?.(action.target, action.anchorId)}
                         >
                             <div className="mt-0.5 shrink-0 text-muted-foreground">{action.icon}</div>
                             <div className="min-w-0 flex-1">

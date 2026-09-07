@@ -75,6 +75,16 @@ These are useful outputs but do not receive a pass/fail status without an indepe
 
 The last four use saved deal-model inputs in the browser. Any fallback assumptions are disclosed in the check notes.
 
+## Add-back support is a separate rules engine
+
+The **Add-Back Banking Rules** card is related to earnings quality, but its labels are not arithmetic verifications. The browser builds a de-duplicated list from structured synthesis findings and classifies each claim as:
+
+- **Supported:** citation-backed and either confirmed/reconciled, at least 80% confidence, or explicitly described as independently supported.
+- **Partial:** ambiguous, pending evidence, or supported only at the aggregate-total level.
+- **Unsupported:** explicitly unverified/unsubstantiated, or an open diligence question that does not carry a partial/pending-evidence qualifier.
+
+The separate category label—defensible, aggressive, lender-disallowed, or management wage deficit—comes from description keywords. Category and evidence quality are intentionally independent: a plausible one-time expense can still be only partially supported. The repricing calculation counts each item once, adds only approved claims to reported EBITDA, and converts disallowed claims into a valuation reduction at the selected multiple. An analyst can change the disallowance toggles; the deterministic classifier does not turn an AI statement into audited proof.
+
 ## Cross-document ties
 
 The browser canonicalizes metric and period labels, then compares facts only across different documents. Examples include revenue in a tax return versus revenue in a P&L, provided both extractions use the same period. The comparison uses a 2% relative tolerance and shows both filenames and values.
@@ -97,7 +107,10 @@ The workflow also records warnings for:
 - Live workflow updater and contract: `scripts/update-n8n-math-contract.cjs`
 - Unified ledger builder: `frontend/utils/unifiedMathChecks.ts`
 - Numeric cross-document comparison: `frontend/utils/crossDocumentConflicts.ts`
+- Add-back evidence parsing: `frontend/utils/addBackItems.ts`
+- Add-back taxonomy and repricing: `frontend/utils/addBackTaxonomy.ts`
+- Shared underwriting formulas: `frontend/utils/dealMath.ts`
 - Ledger UI: `frontend/components/UnifiedMathChecksCard.tsx`
 - Workspace placement: `frontend/components/views/DiligenceWorkspaceView.tsx`
 
-Existing document rows are not retroactively re-extracted by this change. New or deliberately reprocessed documents receive the repaired fact contract and reconciliation v3 output.
+Existing document rows are not retroactively re-extracted. New or deliberately reprocessed documents receive the repaired fact contract and reconciliation v5 output; older rows retain their stored reconciliation JSON until they are reprocessed.

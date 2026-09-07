@@ -226,7 +226,7 @@ export function summarizeResults(
         overallPercentage,
         preLoiAccuracyPct,
         postLoiAccuracyPct,
-        status: overallPercentage >= 70 ? 'SHIP-READY (PASS)' : 'NEEDS-TUNING',
+        status: total === 0 || overallPercentage >= minScore ? 'SHIP-READY (PASS)' : 'NEEDS-TUNING',
         regressionThreshold: minScore,
         regressionPassed: total === 0 || overallPercentage >= minScore,
         categoryAverages,

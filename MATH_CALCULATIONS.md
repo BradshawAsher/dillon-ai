@@ -4,20 +4,24 @@
 
 The **MergeWorks Evaluation Suite** measures workflow extraction accuracy, financial precision, risk recall, valuation bounds, deterministic arithmetic, and deal recommendation fidelity across **8 distinct dimensions**.
 
-To reflect real-world M&A due diligence (where multi-document project synthesis is the primary deliverable), evaluation is structured across **7 per-document dimensions** ($80$ maximum points) and **1 project-level cross-document contradiction dimension** ($10$ maximum points), totaling **$90$ maximum points**.
+Evaluation is structured across **7 per-document dimensions** ($80$ maximum points) and **1 project-level cross-document contradiction dimension** ($10$ maximum points). The project dimension is reported separately rather than added to the document release-gate percentage.
 
 ### Dual-Mode Scoring Architecture
-1. **Pre-LOI Mode ($6$ Dimensions, $70$ Max Points)**:
+1. **Pre-LOI View ($6$ Dimensions)**:
    - Evaluates initial intake, screening, and baseline risk before an offer is made.
    - Dimensions: `classification` (10), `facts` (10), `risk` (20), `valuation` (15), `employee` (5), `math` (10).
-2. **Post-LOI Mode ($2$ Dimensions, $20$ Max Points)**:
+2. **Post-LOI View ($2$ Dimensions)**:
    - Evaluates confirmatory due diligence, contract terms, and inter-document cross-examination.
    - Dimensions: `recommendation` (10), `crossDocConflicts` (10).
 
-### 90/10 Synthesizer / Per-Document Composite Formula
-All $7$ per-document dimensions utilize a **90% Synthesizer / 10% Per-Document** weighted composite formula:
+Each view averages its included dimensions after converting them to percentages; these views do not replace the 80-point per-document release score.
 
-$$\text{Dimension Score}_d = \left( 0.90 \times S_{\text{synth}, d} \right) + \left( 0.10 \times S_{\text{per\_doc}, d} \right)$$
+### 90/10 Historical Composite Formula
+All $7$ per-document dimensions currently preserve the harness's historical **90% baseline / 10% per-document** formula:
+
+$$\text{Dimension Score}_d = \left( 0.90 \times S_{\text{dimension max}, d} \right) + \left( 0.10 \times S_{\text{per\_doc}, d} \right)$$
+
+The current scorer does **not** load a separately measured synthesizer score for these seven fields; the 90% term is the dimension maximum. Project-level cross-document conflict detection is scored separately. This eval-harness `mathScore` compares the returned math-check status with ground truth; it is not the production arithmetic engine described in Section 4.
 
 For any document $i \in \{1, \dots, M\}$ in a test suite of $M$ documents, the total per-document score $T_i$ and accuracy percentage $P_i$ are defined as:
 
@@ -35,7 +39,7 @@ $$P_i = \left( \frac{T_i}{T_{\text{max}}} \right) \times 100\% \quad (T_{\text{m
    $$A_{\text{suite}} = \left( \frac{\sum_{i=1}^{M} T_i}{M \times T_{\text{max}}} \right) \times 100\%$$
 
 2. **Overall Document Pass Rate ($R_{\text{pass}}$)**:
-   The proportion of documents clearing the quality threshold $\theta = 70\%$:
+   The proportion of documents clearing the quality threshold $\theta = 80\%$:
 
    $$R_{\text{pass}} = \left( \frac{\sum_{i=1}^{M} \mathbb{I}(P_i \ge \theta)}{M} \right) \times 100\%$$
 
@@ -105,7 +109,7 @@ where $S_{\text{doc\_val}}$ evaluates valuation relative error $\epsilon_{\text{
 $$S_{\text{doc\_val}} = \begin{cases} 
 15 & \text{if } \epsilon_{\text{val}} \le 0.15 \quad (\le 15\% \text{ error}) \\
 10 & \text{if } 0.15 < \epsilon_{\text{val}} \le 0.30 \quad (\le 30\% \text{ error}) \\
-5 & \text{if } \epsilon_{\text{val}} > 0.30 \text{ but } \hat{V}_{\text{base}} > 0 \\
+5 & \text{if } \epsilon_{\text{val}} > 0.30 \text{ and a value is present} \\
 0 & \text{if missing/null}
 \end{cases}$$
 
@@ -139,8 +143,7 @@ $$S_{\text{acq}} = 0.90 \times 10 + 0.10 \times S_{\text{doc\_rec}}$$
 
 $$S_{\text{doc\_rec}} = \begin{cases} 
 10 & \text{if final recommendation posture aligns (Go / Conditional Go / No-Go)} \\
-5 & \text{if adjacent posture} \\
-0 & \text{if direct opposite mismatch}
+5 & \text{for any non-aligned posture}
 \end{cases}$$
 
 ---
@@ -154,8 +157,8 @@ $$S_{\text{conflicts}} = \min\left(10, \max\left(0, \text{round}(10 \times R_{\t
 where:
 1. $R_{\text{detector}} = \frac{|\text{Expected Conflicts Caught by Deterministic Rule Engine}|}{|\text{Expected Conflicts}|}$
 2. $R_{\text{llm}} = \frac{|\text{Expected Conflicts Surfaced in LLM Synthesis Output}|}{|\text{Expected Conflicts}|}$
-3. $R_{\text{combined}} = \max(R_{\text{detector}}, R_{\text{llm}})$
-4. $P_{\text{fp}} = \max(0, \text{False Positives} - 1)$ (penalty for false alarms).
+3. $R_{\text{combined}}$ counts an expected conflict when either the deterministic detector or the LLM output catches it.
+4. $P_{\text{fp}} = \min(5, 2 \times \text{False Positives})$ (two points per unmatched detector alert, capped at five).
 
 ---
 
@@ -175,15 +178,17 @@ Consider `Werkheiser P&L 2025.pdf` evaluated under the full suite:
 
 $$\mathbf{\text{Per-Doc Score } T_i} = 10.0 + 9.3 + 19.3 + 15.0 + 5.0 + 10.0 + 10.0 = \mathbf{78.6 \text{ / } 80 \text{ pts}}$$
 
-$$\mathbf{\text{Document Accuracy } P_i} = \left( \frac{78.6}{80} \right) \times 100\% = \mathbf{98.3\% \quad (\text{PASS} \ge 70\%)}$$
+$$\mathbf{\text{Document Accuracy } P_i} = \left( \frac{78.6}{80} \right) \times 100\% = \mathbf{98.3\% \quad (\text{PASS} \ge 80\%)}$$
 
-$$\mathbf{\text{Project Conflict Score (Dim 8)}} = \mathbf{10.0 \text{ / } 10 \text{ pts}} \implies \mathbf{\text{Total Deal Suite Score}} = \mathbf{88.6 \text{ / } 90 \text{ pts} \quad (98.4\%)}$$
+$$\mathbf{\text{Project Conflict Score (Dim 8)}} = \mathbf{10.0 \text{ / } 10 \text{ project pts}}$$
+
+The project conflict result is reported beside the 98.3% document headline; the current harness does not combine it into a second 90-point release-gate percentage.
 
 ---
 
 ## 4. Deterministic Financial Math & Underwriting Engine
 
-The underwriting cash-flow engine in `frontend/utils/dealMath.ts` powers all deal analysis cards, live Excel export (`excelModelGenerator.ts`), and the Master Deterministic Math & Reconciliation Ledger (`unifiedMathChecks.ts`).
+The shared underwriting engine in `frontend/utils/dealMath.ts` powers the Master Deterministic Math & Reconciliation Ledger and the returns/export consumers that import it. Some specialized interactive cards still own presentation-specific scenario formulas, so their displayed definition should be checked in that card as well as against this shared engine.
 
 ### 1. Loan Amortization & Debt Service
 Acquisition senior debt is modeled using standard fully amortizing monthly compounding:
@@ -196,16 +201,18 @@ where:
 * $n = \text{Loan Term (Years)} \times 12$ (total scheduled payment months)
 * $\text{Annual Debt Service} = 12 \times M$
 * Zero-Interest Boundary: If $r = 0$, $M = \frac{P}{n}$ and $\text{Annual Debt Service} = \frac{P}{\text{Term (Years)}}$.
-* **Centralized Defaults**: `DEAL_MATH_DEFAULTS.interestRate = 0.07` (7.00%) and `DEAL_MATH_DEFAULTS.amortizationYears = 10`.
+* **Centralized Defaults**: `DEAL_MATH_DEFAULTS.interestRate = 0.07` (7.00%) and `DEAL_MATH_DEFAULTS.loanTermYears = 10`. A saved `amortizationYears` takes precedence over a derived/legacy `loanTermYears`, then the default applies.
 
 ### 2. Percentage Fraction Normalization
 All interest rates and tax rates route through `normalizePercentageFraction(val)` to eliminate input ambiguity:
 
 $$\text{normalizePercentageFraction}(v) = \begin{cases} 
-\frac{v}{100} & \text{if } v > 1.0 \quad (\text{e.g. } 7 \to 0.07, \, 25 \to 0.25) \\
-v & \text{if } 0 \le v \le 1.0 \quad (\text{e.g. } 0.07 \to 0.07) \\
-\text{null} & \text{otherwise}
+\frac{v}{100} & \text{if } |v| > 1.0 \quad (\text{e.g. } 7 \to 0.07, \, 25 \to 0.25) \\
+v & \text{if } |v| \le 1.0 \quad (\text{e.g. } 0.07 \to 0.07) \\
+\text{null} & \text{if } v \text{ is missing or non-finite}
 \end{cases}$$
+
+Normalization only resolves storage convention. Each consuming formula separately rejects values that are invalid for its domain, such as a negative loan rate.
 
 ### 3. Debt Service Coverage Ratio (DSCR)
 
@@ -214,7 +221,7 @@ $$\text{DSCR} = \frac{\text{Unlevered Operating Cash Flow}}{\text{Annual Senior 
 where:
 $$\text{Unlevered Operating Cash Flow} = \text{EBITDA} \times (1 - \text{Tax Rate}) - \text{Maintenance Capex}$$
 
-* Benchmark: $\text{DSCR} \ge 1.25\times$ is considered bankable / safe; $\text{DSCR} < 1.0\times$ represents a critical deal-killer.
+* Screening context: cards may display lender-specific target ranges such as 1.25× or 1.35×. The unified ledger always labels this modeled DSCR **calculated**, not verified or failed, because a generic benchmark is not an independent comparator.
 
 ### 4. Unlevered Payback Period
 
@@ -234,3 +241,7 @@ $$\text{WC Funding Gap} = \text{Model Working Capital Requirement} - \text{Docum
 
 * If $\text{WC Funding Gap} > 0$, buyer must fund the liquidity deficit at close.
 * If $\text{WC Funding Gap} < 0$, the business holds surplus cash/working capital.
+
+## 5. Verification boundary
+
+A deterministic formula proves only that the supplied inputs agree with that formula. It does not prove that OCR read the source correctly, that the accounting policy is appropriate, that an add-back is supportable, or that the deal is attractive. A green verified tie therefore requires both citation-backed inputs and either a separately stated comparator or an independent same-period document tie. Ratios, market benchmarks, and scenario outputs remain calculated underwriting information.

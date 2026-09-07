@@ -543,7 +543,7 @@ export default function LandingPage({ onLaunchDashboard, onGoToLogin, currentUse
                                     <ul className="space-y-1.5 pl-5 text-muted-foreground list-disc">
                                         <li><strong>Normalized EBITDA Reconstruction</strong>: Audits seller bridges to uncover unaudited forward-looking add-backs.</li>
                                         <li><strong>Fair Value Bounds</strong>: Computes mathematically defensible Bear, Base, and Bull valuation ranges.</li>
-                                        <li><strong>Deterministic Math Checks</strong>: Pure arithmetic cross-verification across revenue, gross profit, and EBITDA.</li>
+                                        <li><strong>Deterministic Math Checks</strong>: Code-based accounting identities and same-period cross-document comparisons, with calculated ratios kept separate from verified ties.</li>
                                         <li><strong>Deal Grading (A–F)</strong>: Automated letter grade and 2×2 risk matrix across data quality and earnings durability.</li>
                                     </ul>
                                 </div>

@@ -161,6 +161,13 @@ describe('summarizeResults', () => {
         const summary = summarizeResults([scoreWith(60), scoreWith(50)], 70)
         expect(summary.overallPercentage).toBe(55)
         expect(summary.regressionPassed).toBe(false)
+        expect(summary.status).toBe('NEEDS-TUNING')
+    })
+
+    it('uses the configured threshold for the human-readable release status', () => {
+        const summary = summarizeResults([scoreWith(75)], 80)
+        expect(summary.regressionPassed).toBe(false)
+        expect(summary.status).toBe('NEEDS-TUNING')
     })
 
     it('identifies the weakest dimension from category averages', () => {

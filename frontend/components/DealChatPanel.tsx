@@ -941,7 +941,8 @@ The ledger runs code-based arithmetic on the supported facts available for **${p
 **4 Forensic Audit Dimensions:**
 1. **P&L Integrity**:
    - $\\text{Gross Profit} = \\text{Revenue} - \\text{COGS}$
-   - $\\text{Operating Income} = \\text{Gross Profit} - \\text{Operating Expenses}$
+   - $\\text{Operating Income} = \\text{Gross Profit} - \\text{Operating Expenses}$ when expenses include D&A
+   - $\\text{EBITDA} = \\text{Gross Profit} - \\text{Operating Expenses before D&A}$ when the source explicitly uses that basis
 2. **Balance Sheet Balance**:
    - $\\text{Total Assets} = \\text{Total Liabilities} + \\text{Owner's Equity}$
    - $\\text{Net Working Capital (NWC)} = \\text{Current Assets} - \\text{Current Liabilities}$
@@ -950,13 +951,14 @@ The ledger runs code-based arithmetic on the supported facts available for **${p
    - Uses a 2% relative tolerance and shows both source values; it does not infer a tie from file names alone
 4. **Underwriting & Transaction Math**:
    - $\\text{Senior Leverage} = \\text{Senior Debt} / \\text{Normalized EBITDA}$
-   - $\\text{DSCR} = (\\text{EBITDA} - \\text{Capex} - \\text{Taxes}) / \\text{Annual Debt Service}$
+   - Illustrative $\\text{DSCR} = (\\text{EBITDA} - \\text{Capex} - \\text{Taxes}) / \\text{Annual Senior Debt Service}$
    - Entry Multiple: $\\text{Purchase Price} / \\text{EBITDA}$
+   - These ratios are calculated outputs, not verified ties unless a separate source comparator exists
 
 **Data Provenance Tiers:**
 - **\`✓ Confirmed & Reconciled\`** (Emerald Shield): Citation-backed and involved in a supported identity that passed the configured tolerance.
 - **\`Documented Only\`**: Extracted from primary filings, awaiting secondary cross-document tie-out.
-- **\`Industry Assumptions\`**: Standard institutional defaults applied where primary accounting records are pending.
+- **\`Calculated / Model Assumption\`**: A ratio or scenario output, with any fallback deal-model inputs disclosed in its notes.
 
 👉 [Open Unified Deterministic Math Checks](tab:diligence#diligence-master-math-checks)
 👉 [Open Deal Model Readiness & Provenance](tab:diligence#deal-model-readiness)`,

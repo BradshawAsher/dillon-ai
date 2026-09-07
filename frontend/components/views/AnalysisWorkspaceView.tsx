@@ -151,11 +151,19 @@ export function AnalysisWorkspaceView({
                                 model={hydratedDealModel}
                                 synthesis={activeProjectSynthesis}
                                 documents={activeProjectDocuments}
-                                onNavigate={(target) => {
+                                onNavigate={(target, anchorId) => {
                                     if (target === 'upload') {
                                         document.querySelector('[data-project-intake]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                                     } else {
                                         setActiveWorkspaceTab(target)
+                                        if (anchorId) {
+                                            setTimeout(() => {
+                                                const el = document.getElementById(anchorId)
+                                                if (el) {
+                                                    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                                }
+                                            }, 150)
+                                        }
                                     }
                                 }}
                             />

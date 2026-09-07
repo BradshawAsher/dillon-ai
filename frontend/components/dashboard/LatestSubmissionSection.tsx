@@ -949,7 +949,7 @@ export default function LatestSubmissionSection({
 
                         {displayedSubmissionRow?.reconciliationJson ? (
                             <div className="xl:col-span-4">
-                                <MathChecksSection documents={[displayedSubmissionRow]} onOpenEvidence={setActiveEvidence} compact title="Document math checks" description="Deterministic arithmetic verifications on this document's extracted numbers." />
+                                <MathChecksSection documents={[displayedSubmissionRow]} onOpenEvidence={setActiveEvidence} compact title="Document math checks" description="Deterministic arithmetic reconciliations and calculated facts from this document's extracted numbers." />
                             </div>
                         ) : null}
 

@@ -3,7 +3,7 @@
 ## Overview
 The **MergeWorks Evaluation Suite & Harness** is an automated benchmarking framework designed to continuously measure the accuracy, fact extraction quality, risk detection, and deal recommendation fidelity of our AI workflows.
 
-It validates extraction and synthesis outputs against verified ground truth specifications stored in [`test_sets/ground_truth/`](file:///c:/Users/s-bas/MERGEWORKS%20REAL%20WEBSITE/Due-Diligence-Dashboard/test_sets/ground_truth) and logs performance trends over time to Supabase (`public.eval_runs`).
+It validates extraction and synthesis outputs against verified ground truth specifications stored in [`test_sets/ground_truth/`](test_sets/ground_truth/) and logs performance trends over time to Supabase (`public.eval_runs`).
 
 ## Active Production AI Model Architecture
 
@@ -23,7 +23,7 @@ The framework operates on a **dual-level evaluation model**:
 ```mermaid
 graph TD
     A["Raw M&A Documents (PDF / XLSX / DOCX)"] --> B["Per-Document Extraction Workflows"]
-    B --> C["Per-Document Eval Harness Scoring (70-80 pts)"]
+    B --> C["Per-Document Eval Harness Scoring (80 pts)"]
     C --> D["Project Synthesis Consolidator Workflow"]
     D --> E["Project Synthesis Eval & Final Recommendation"]
     E --> F["Supabase Logging (public.eval_runs)"]
@@ -36,20 +36,20 @@ graph TD
 
 ---
 
-## 8-Dimension Scoring System (Max 80–90 Points)
+## Scoring System (80 Per-Document Points + 10 Project Points)
 
-Every document is scored across **8 core dimensions** (Max 80 points in Pre-LOI mode, 90 points in Post-LOI confirmatory diligence mode), converted to a normalized 0–100% score:
+Every document is scored across the first **7 dimensions** for a maximum of 80 points, converted to a normalized 0–100% score. Cross-document conflict detection is an eighth, project-level dimension worth 10 points and is reported separately so the historical document headline remains comparable.
 
 | Dimension | Max Points | Evaluation Criteria |
 | :--- | :--- | :--- |
 | **1. Classification** | **10 pts** | Matches detected document type (P&L, CIM, Add-Back Notes, Concentration Table, Balance Sheet). Exact match = 10 pts, secondary match = 7 pts. |
 | **2. Financial Facts** | **10 pts** | Compares extracted numerical metrics (Revenue, EBITDA, COGS, Net Income) year-over-year. $\le 1\%$ error = 10 pts, $\le 5\%$ error = 5 pts. |
 | **3. Risk & Flag Recall** | **20 pts** | Evaluates traffic light accuracy (10 pts) + keyword recall ratio of expected Red & Yellow risk flags (10 pts). |
-| **4. Valuation Accuracy** | **10 pts** | Compares calculated valuation base estimate against ground-truth bounds ($\le 15\%$ error = 10 pts, $\le 30\%$ error = 6 pts). |
+| **4. Valuation Accuracy** | **15 pts** | Compares calculated valuation base estimate against ground truth ($\le 15\%$ error = 15 pts, $\le 30\%$ error = 10 pts). |
 | **5. Employee Evidence** | **5 pts** | Verifies extracted headcount and payroll evidence against agreements. |
-| **6. Math Checks** | **10 pts** | Validates row/column total consistency and accounting balance checks. |
+| **6. Math-Check Status** | **10 pts** | Compares the workflow's returned math-check status with the expected status. The production arithmetic itself is documented in `DETERMINISTIC_MATH_CHECKS.md`. |
 | **7. Acquisition Judgment** | **10 pts** | Evaluates bottom-line M&A recommendation fidelity (**PROCEED**, **RENEGOTIATE**, **ESCALATE**). Exact match = 10 pts, adjacent risk posture = 5 pts. |
-| **8. Cross-Doc Conflicts** | **15 pts (Post-LOI) / 5 pts (Pre-LOI)** | Evaluates cross-document reconciliation and discrepancy detection (tax return vs. P&L revenue, book vs. bank cash). |
+| **8. Cross-Doc Conflicts** | **10 project pts** | Measures expected-conflict recall across the deterministic detector and LLM synthesis, minus false-positive penalties. |
 
 ### Partial Credit Scoring Rules
 The evaluation harness awards partial credit for near-misses and adjacent risk postures:
@@ -64,7 +64,7 @@ The evaluation harness awards partial credit for near-misses and adjacent risk p
   - Exceeds $5\%$ numerical error: **3 pts (30%)**
 - **Risk Traffic Light (10 pts)**:
   - Exact traffic light match (Red/Yellow/Green): **10 pts (100%)**
-  - Off by one risk level: **5 pts (50%)**
+  - Any non-matching traffic light: **5 pts (50%)**
 - **Valuation Base Estimate (15 pts)**:
   - Within $\le 15\%$ of ground truth: **15 pts (100%)**
   - Within $\le 30\%$ of ground truth: **10 pts (67%)**
@@ -72,12 +72,11 @@ The evaluation harness awards partial credit for near-misses and adjacent risk p
 - **Acquisition Judgment (10 pts)**:
   - Exact recommendation match (`PROCEED` === `PROCEED`, `RENEGOTIATE` === `RENEGOTIATE`, `ESCALATE` === `ESCALATE`): **10 pts (100%)**
   - Risk posture alignment (`YELLOW` $\leftrightarrow$ `RENEGOTIATE`, `RED` $\leftrightarrow$ `ESCALATE`, `GREEN` $\leftrightarrow$ `PROCEED`): **10 pts (100%)**
-  - Adjacent risk posture (e.g., `PROCEED_WITH_CAUTION` vs `PROCEED`): **5 pts (50%)**
-  - Direct mismatch (e.g., `PROCEED` vs `ESCALATE`): **0 pts (0%)**
+  - Any non-aligned posture: **5 pts (50%)**
 
 ### Pass / Fail Benchmark
-- **Document Pass Threshold**: **$\ge 70\%$** ($\ge 56 / 80$ points).
-- **Suite Pass Threshold**: **$\ge 70\%$** overall average across all test documents (**SHIP-READY**).
+- **Document Pass Threshold**: **$\ge 80\%$** ($\ge 64 / 80$ points).
+- **CI Regression Threshold**: **$\ge 80\%$** overall average across all test documents. `EVAL_MIN_SCORE` can override the suite threshold for an intentional local run.
 
 ---
 
@@ -150,4 +149,4 @@ npx vitest run utils/evalScoring.test.ts
 
 1. **Supabase Table**: Results are automatically published to `public.eval_runs`:
    - Columns: `id`, `run_at`, `commit_sha`, `total_documents`, `passed_documents`, `overall_percentage`, `status`, `report_json`.
-2. **CI/CD Regression Gate**: GitHub Actions running `.github/workflows/eval-regression.yml` automatically execute `npx tsx scripts/run-evals.ts` on PRs and commits to enforce that accuracy does not regress below $70\%$.
+2. **CI/CD Regression Gate**: GitHub Actions running `.github/workflows/eval-regression.yml` automatically execute `npx tsx scripts/run-evals.ts` on PRs and commits to enforce that accuracy does not regress below $80\%$.

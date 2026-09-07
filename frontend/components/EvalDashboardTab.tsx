@@ -408,7 +408,7 @@ export default function EvalDashboardTab({
 
 
     // Per-dimension averages (% of each dimension's max)
-    const REGRESSION_THRESHOLD = 70
+    const REGRESSION_THRESHOLD = 80
     const DIMENSIONS: Array<{ key: string; field: string; label: string; max: number }> = [
         { key: 'classification', field: 'classificationScore', label: 'Classification', max: 10 },
         { key: 'facts', field: 'factsScore', label: 'Financial facts', max: 10 },
@@ -446,9 +446,6 @@ export default function EvalDashboardTab({
             avgPct = latestRun.categoryAverages?.crossDocConflicts !== undefined
                 ? Number(latestRun.categoryAverages.crossDocConflicts) || 0
                 : null
-        } else if (dim.key === 'recommendation') {
-            // 90% Synthesizer Verdict (100% accurate across packets) + 10% Per-Doc Average (80%)
-            avgPct = Math.round((0.90 * 100) + (0.10 * 80)) // 98%
         } else if (latestRun.categoryAverages?.[dim.key] !== undefined) {
             avgPct = Number(latestRun.categoryAverages[dim.key]) || 0
         } else if (docResults.length > 0) {
@@ -1159,8 +1156,8 @@ export default function EvalDashboardTab({
                                     className="text-xs px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium"
                                 >
                                     <option value="all">All Statuses (Pass & Fail)</option>
-                                    <option value="pass">Passed Only (≥70%)</option>
-                                    <option value="fail">Failed Only (&lt;70%)</option>
+                                    <option value="pass">Passed Only (≥80%)</option>
+                                    <option value="fail">Failed Only (&lt;80%)</option>
                                 </select>
 
                                 {/* Filter by Business */}
@@ -1275,7 +1272,7 @@ export default function EvalDashboardTab({
                             const fileName = (d.fileName || '').toLowerCase()
                             const businessName = (d.business || '').toLowerCase()
                             const model = (d.modelUsed || d.perDocModel || 'OpenAI 5.6 Terra').toLowerCase()
-                            const isPass = (d.percentage ?? 0) >= 70
+                            const isPass = (d.percentage ?? 0) >= 80
 
                             const matchesSearch = !q || fileName.includes(q) || businessName.includes(q)
                             const matchesStatus = statusFilter === 'all' || (statusFilter === 'pass' ? isPass : !isPass)
@@ -2439,7 +2436,7 @@ export default function EvalDashboardTab({
                                     </thead>
                                     <tbody className="divide-y divide-border/60">
                                         {displayRuns.map((run: any) => {
-                                            const isPass = (run.status || '').toUpperCase().includes('PASS') || run.overall_percentage >= 70
+                                            const isPass = (run.status || '').toUpperCase().includes('PASS') || run.overall_percentage >= 80
                                             return (
                                                 <tr key={run.id} className="hover:bg-muted/10 transition-colors">
                                                     <td className="py-2.5 px-3 font-medium text-foreground whitespace-nowrap">
@@ -2626,7 +2623,7 @@ export default function EvalDashboardTab({
                                 return (
                                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                                          {filteredModalDocs.map((doc: any, idx: number) => {
-                                             const isPass = (doc.percentage ?? 0) >= 70
+                                             const isPass = (doc.percentage ?? 0) >= 80
                                              const docDurationSec = getDocDurationSec(doc)
                                             const targetKey = doc.projectId || doc.projectKey || mapBusinessToProjectKey(selectedDocViewerBusiness || '', doc)
                                             const targetDocName = doc.fileName || doc.originalFilename || ''
