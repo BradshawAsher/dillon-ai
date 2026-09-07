@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getConcentrationRisk } from './concentrationRisk'
+import { getConcentrationRisk, maxRevenueShare } from './concentrationRisk'
 
 describe('getConcentrationRisk', () => {
     it('flags high risk when a single customer exceeds 40% of revenue', () => {
@@ -54,5 +54,18 @@ describe('getConcentrationRisk', () => {
 
     it('detects a critical finding regardless of severity casing', () => {
         expect(getConcentrationRisk([{ revenueShare: 0.1, severity: 'Critical' }]).variant).toBe('destructive')
+    })
+})
+
+describe('maxRevenueShare', () => {
+    it('returns the largest finite revenue share and treats null/NaN as 0', () => {
+        expect(maxRevenueShare([{ revenueShare: 0.1 }, { revenueShare: 0.35 }, { revenueShare: null }])).toBe(0.35)
+        expect(maxRevenueShare([{ revenueShare: NaN }])).toBe(0)
+        expect(maxRevenueShare([])).toBe(0)
+    })
+
+    it('does not overflow on a very large findings array', () => {
+        const many = Array.from({ length: 200_000 }, () => ({ revenueShare: 0.001 }))
+        expect(() => maxRevenueShare(many)).not.toThrow()
     })
 })

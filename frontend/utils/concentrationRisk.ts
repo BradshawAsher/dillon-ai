@@ -22,18 +22,26 @@ export type ConcentrationRisk = {
  * critical) is high risk; above 20% (or any finding at all) is moderate;
  * otherwise the base is considered diversified.
  */
-export function getConcentrationRisk(findings: ConcentrationRiskInput[]): ConcentrationRisk {
-    // reduce, not Math.max(...spread): a fragmented customer base can carry
-    // hundreds of per-customer findings, and spreading that many arguments can
-    // overflow the call stack — the same guard latencyMetrics uses.
-    //
-    // Only finite shares count: a NaN slips past `?? 0` (nullish coalescing does
-    // not catch NaN) and would make maxShare NaN, so every `NaN > threshold`
-    // comparison is false and a genuinely concentrated base reads as diversified.
-    const maxShare = findings.reduce(
+/**
+ * Largest single-customer revenue share across the findings, as a number.
+ *
+ * reduce, not Math.max(...spread): a fragmented customer base can carry
+ * hundreds of per-customer findings, and spreading that many arguments can
+ * overflow the call stack — the same guard latencyMetrics uses.
+ *
+ * Only finite shares count: a NaN slips past `?? 0` (nullish coalescing does
+ * not catch NaN) and would make the max NaN, so every `NaN > threshold`
+ * comparison is false and a genuinely concentrated base reads as diversified.
+ */
+export function maxRevenueShare(findings: ConcentrationRiskInput[]): number {
+    return findings.reduce(
         (max, f) => (typeof f.revenueShare === 'number' && Number.isFinite(f.revenueShare) && f.revenueShare > max ? f.revenueShare : max),
         0,
     )
+}
+
+export function getConcentrationRisk(findings: ConcentrationRiskInput[]): ConcentrationRisk {
+    const maxShare = maxRevenueShare(findings)
     const hasCritical = findings.some((f) => (f.severity ?? '').trim().toLowerCase() === 'critical')
     if (maxShare > 0.4 || hasCritical) return { label: 'High concentration risk', variant: 'destructive' }
     if (maxShare > 0.2 || findings.length > 0) return { label: 'Moderate concentration', variant: 'warning' }
