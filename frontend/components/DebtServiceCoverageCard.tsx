@@ -6,6 +6,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
+import DataOriginBadge from './common/DataOriginBadge'
 
 type Props = {
     model: DealModel
@@ -130,7 +131,18 @@ export default function DebtServiceCoverageCard({ model }: Props) {
                 {/* Current DSCR display */}
                 <div className={`rounded-lg border p-3 ${statusColors[analysis.status]}`}>
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium">Current DSCR</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium">Current DSCR</span>
+                            <DataOriginBadge
+                                origin="calculated"
+                                label="Calculated DSCR"
+                                metricLabel="Debt Service Coverage Ratio (DSCR)"
+                                metricValue={`${analysis.currentDSCR.toFixed(2)}x`}
+                                formula="After-Tax EBITDA ÷ Total Annual Debt Service"
+                                description="Measures the company's operating cash flow available to cover required senior loan principal and interest payments. Bank covenants usually require at least 1.25x."
+                                compact
+                            />
+                        </div>
                         <span className="text-xs font-medium">{statusLabels[analysis.status]}</span>
                     </div>
                     <div className="text-2xl font-bold mt-1">
@@ -171,7 +183,18 @@ export default function DebtServiceCoverageCard({ model }: Props) {
                 {/* Decline metrics */}
                 <div className="grid grid-cols-2 gap-3 mt-2">
                     <div className="rounded-lg bg-muted/50 p-3">
-                        <div className="text-[10px] text-muted-foreground">Revenue decline to breakeven</div>
+                        <div className="flex items-center justify-between gap-1">
+                            <div className="text-[10px] text-muted-foreground">Revenue decline to breakeven</div>
+                            <DataOriginBadge
+                                origin="calculated"
+                                label="Cushion Formula"
+                                metricLabel="Revenue Decline to Breakeven"
+                                metricValue={`${analysis.revenueDeclineToBreakeven.toFixed(1)}%`}
+                                formula="((Operating Cash Flow - Debt Service) ÷ (Revenue × Contribution Margin)) × 100"
+                                description="The maximum revenue contraction the business can endure before net operating cash flow fails to cover annual debt obligations (DSCR < 1.0x)."
+                                compact
+                            />
+                        </div>
                         <div className="text-lg font-bold text-foreground mt-0.5">
                             {analysis.revenueDeclineToBreakeven.toFixed(1)}%
                         </div>
@@ -180,7 +203,18 @@ export default function DebtServiceCoverageCard({ model }: Props) {
                         </div>
                     </div>
                     <div className="rounded-lg bg-muted/50 p-3">
-                        <div className="text-[10px] text-muted-foreground">EBITDA decline to min threshold</div>
+                        <div className="flex items-center justify-between gap-1">
+                            <div className="text-[10px] text-muted-foreground">EBITDA decline to min threshold</div>
+                            <DataOriginBadge
+                                origin="calculated"
+                                label="Cushion Formula"
+                                metricLabel="EBITDA Decline to Covenant Threshold"
+                                metricValue={`${analysis.ebitdaDeclineToMinThreshold.toFixed(1)}%`}
+                                formula="((Operating Cash Flow - 1.25 × Debt Service) ÷ Operating Cash Flow) × 100"
+                                description="The percentage drop in EBITDA the company can experience before breaching the 1.25x DSCR standard lender default covenant."
+                                compact
+                            />
+                        </div>
                         <div className="text-lg font-bold text-foreground mt-0.5">
                             {analysis.ebitdaDeclineToMinThreshold.toFixed(1)}%
                         </div>

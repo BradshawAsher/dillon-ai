@@ -176,7 +176,18 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="purchase price + fees + working capital"
                                 infoTerm="Initial investment"
                                 alignTip="left"
-                                statusBadge={<DataOriginBadge origin="calculated" label={priceIsConfirmed ? "Calculated (Saved Price)" : "Calculated (Preview Price)"} formula="price + fees + working capital" compact />}
+                                formula="purchase price + transaction fees + working capital"
+                                statusBadge={
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        label={priceIsConfirmed ? "Calculated (Saved Price)" : "Calculated (Preview Price)"}
+                                        metricLabel="Initial investment"
+                                        metricValue={money(initialInvestment!, currency)}
+                                        formula="purchase price + transaction fees + working capital"
+                                        description="Total upfront cash required at closing combining purchase price, closing fees, and working capital reserve."
+                                        compact
+                                    />
+                                }
                                 {...evidenceProps('initialInvestment')}
                             />
                             <Metric
@@ -185,7 +196,18 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="EBITDA/SDE × (1 − tax rate) − capex"
                                 infoTerm="Operating cash flow"
                                 alignTip="left"
-                                statusBadge={<DataOriginBadge origin="calculated" label={ebitdaIsConfirmed ? "Calculated (Verified EBITDA)" : "Calculated (Illustrative)"} formula="EBITDA × (1 − tax) − capex" compact />}
+                                formula="EBITDA/SDE × (1 − tax rate) − maintenance capex"
+                                statusBadge={
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        label={ebitdaIsConfirmed ? "Calculated (Verified EBITDA)" : "Calculated (Illustrative)"}
+                                        metricLabel="Annual operating cash flow"
+                                        metricValue={money(annualCashFlow!, currency)}
+                                        formula="EBITDA/SDE × (1 − tax rate) − maintenance capex"
+                                        description="Unlevered annual cash yield generated after paying income taxes and essential maintenance capex."
+                                        compact
+                                    />
+                                }
                                 {...evidenceProps('annualCashFlow')}
                             />
                             <Metric
@@ -194,7 +216,18 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="annual cash flow ÷ initial investment"
                                 infoTerm="Simple annual ROI"
                                 alignTip="center"
-                                statusBadge={<DataOriginBadge origin="calculated" label="Derived ROI" formula="annual cash flow ÷ initial investment" compact />}
+                                formula="annual cash flow ÷ initial investment"
+                                statusBadge={
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        label="Derived ROI"
+                                        metricLabel="Simple annual ROI"
+                                        metricValue={annualRoi === null ? 'Not available' : `${(annualRoi * 100).toFixed(1)}%`}
+                                        formula="annual cash flow ÷ initial investment"
+                                        description="Uncompounded annual cash-on-cash yield generated solely from operations before terminal exit."
+                                        compact
+                                    />
+                                }
                                 {...evidenceProps('annualRoi')}
                             />
                             <Metric
@@ -203,7 +236,18 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="initial investment ÷ annual cash flow"
                                 infoTerm="Payback period"
                                 alignTip="right"
-                                statusBadge={<DataOriginBadge origin="calculated" label="Payback Timeline" formula="initial investment ÷ annual cash flow" compact />}
+                                formula="initial investment ÷ annual cash flow"
+                                statusBadge={
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        label="Payback Timeline"
+                                        metricLabel="Payback period"
+                                        metricValue={paybackYears === null ? 'Not available' : `${paybackYears.toFixed(1)} years`}
+                                        formula="initial investment ÷ annual cash flow"
+                                        description="Number of operating years required to completely recover initial cash invested from business cash flows."
+                                        compact
+                                    />
+                                }
                                 {...evidenceProps('paybackYears')}
                             />
                         </div>
@@ -215,7 +259,18 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="annual cash flow × hold period"
                                 infoTerm="Cumulative cash flow"
                                 alignTip="left"
-                                statusBadge={<DataOriginBadge origin="calculated" label="Cumulative Cash Flow" formula="annual cash flow × hold period" compact />}
+                                formula="annual operating cash flow × hold period"
+                                statusBadge={
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        label="Cumulative Cash Flow"
+                                        metricLabel="Cumulative operating cash flow"
+                                        metricValue={cumulativeHoldCashFlow === null ? 'Add hold period' : money(cumulativeHoldCashFlow, currency)}
+                                        formula="annual operating cash flow × hold period"
+                                        description="Aggregate unlevered operating cash flow accumulated across the entire planned holding timeline."
+                                        compact
+                                    />
+                                }
                             />
                             <Metric
                                 label="Operating cash-flow MOIC"
@@ -223,7 +278,18 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="operating cash flow ÷ initial investment"
                                 infoTerm="MOIC"
                                 alignTip="left"
-                                statusBadge={<DataOriginBadge origin="calculated" label="Operating MOIC" formula="cumulative cash flow ÷ initial investment" compact />}
+                                formula="cumulative operating cash flow ÷ initial investment"
+                                statusBadge={
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        label="Operating MOIC"
+                                        metricLabel="Operating cash-flow MOIC"
+                                        metricValue={operatingMoic === null ? 'Add hold period' : `${operatingMoic.toFixed(2)}x`}
+                                        formula="cumulative operating cash flow ÷ initial investment"
+                                        description="Multiple of invested capital returned strictly through operational cash generation, ignoring terminal sale proceeds."
+                                        compact
+                                    />
+                                }
                             />
                             <Metric
                                 label="Net exit proceeds"
@@ -231,7 +297,18 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="EBITDA/SDE × exit multiple − exit costs"
                                 infoTerm="Net exit proceeds"
                                 alignTip="center"
-                                statusBadge={<DataOriginBadge origin="calculated" label="Exit Proceeds" formula="EBITDA × exit multiple − exit costs" compact />}
+                                formula="EBITDA/SDE × exit multiple − exit costs"
+                                statusBadge={
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        label="Exit Proceeds"
+                                        metricLabel="Net exit proceeds"
+                                        metricValue={netExitProceeds === null ? 'Add exit inputs' : money(netExitProceeds, currency)}
+                                        formula="EBITDA/SDE × exit multiple − exit costs"
+                                        description="Net proceeds received upon selling the business at the terminal exit multiple after paying transaction fees."
+                                        compact
+                                    />
+                                }
                                 {...evidenceProps('netExitProceeds')}
                             />
                             <Metric
@@ -240,7 +317,18 @@ export default function AllCashReturnsCard({ model, documents = [], onOpenEviden
                                 detail="operating cash flow + exit proceeds"
                                 infoTerm="IRR"
                                 alignTip="right"
-                                statusBadge={<DataOriginBadge origin="calculated" label="All-Cash Return" formula="IRR & MOIC over total all-cash inflows" compact />}
+                                formula="IRR(all-cash flows), MOIC((cumulative cash + net exit) ÷ investment)"
+                                statusBadge={
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        label="All-Cash Return"
+                                        metricLabel="Total MOIC / IRR"
+                                        metricValue={!exitReady ? 'Add exit inputs' : `${totalMoic?.toFixed(2) ?? '—'}x / ${irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}`}
+                                        formula="IRR(all-cash timeline), MOIC((cumulative cash + net exit) ÷ investment)"
+                                        description="Deterministic unlevered total return combining all operating cash flows and net terminal sale proceeds."
+                                        compact
+                                    />
+                                }
                                 {...evidenceProps('totalMoic')}
                             />
                         </div>
@@ -282,6 +370,7 @@ function Metric({
     infoTerm,
     alignTip = 'center',
     statusBadge,
+    formula,
 }: {
     label: string
     value: string
@@ -290,6 +379,7 @@ function Metric({
     infoTerm?: string
     alignTip?: 'center' | 'left' | 'right'
     statusBadge?: ReactNode
+    formula?: string
 }) {
     return (
         <div
@@ -301,7 +391,7 @@ function Metric({
                     <span className="text-xs font-semibold">{label}</span>
                     {infoTerm && FINANCIAL_TERMS[infoTerm] ? (
                         <span onClick={(e) => e.stopPropagation()}>
-                            <InfoTip term={infoTerm} definition={FINANCIAL_TERMS[infoTerm]} align={alignTip} />
+                            <InfoTip term={infoTerm} definition={FINANCIAL_TERMS[infoTerm]} formula={formula} align={alignTip} />
                         </span>
                     ) : null}
                 </div>

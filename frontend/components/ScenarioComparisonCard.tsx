@@ -68,6 +68,79 @@ export default function ScenarioComparisonCard({ model, documents = [], onOpenEv
             ],
             primaryFact: revenueEvidence,
         })
-        return <div key={name} className="rounded-lg border border-border bg-background p-4"><div className="flex items-center justify-between gap-2"><div className="flex items-center gap-1.5"><p className="font-semibold">{name}</p><DataOriginBadge origin="assumption" label="Scenario Model" compact /></div>{onOpenEvidence ? <button type="button" onClick={() => onOpenEvidence(scenarioEvidence)} aria-label={`Show how the ${name} scenario was calculated`} className="text-xs font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">How this was calculated</button> : null}</div><div className="mt-2 flex items-center justify-between text-sm text-muted-foreground"><span>Year {years} revenue / EBITDA</span><DataOriginBadge origin="calculated" compact /></div><p className="font-medium">{money(exitRevenue, currency)} / {money(exitEbitda, currency)}</p><p className="mt-2 text-sm text-muted-foreground">Net exit value</p><p className="font-medium">{money(netExitValue, currency)}</p>{!allCashReady ? <p className="mt-3 text-sm text-muted-foreground">Add price and tax rate for all-cash cash flow, MOIC, payback, and IRR.</p> : <><div className="mt-2 flex items-center justify-between text-sm text-muted-foreground"><span>All-cash MOIC / IRR</span><DataOriginBadge origin="calculated" compact /></div><p className="font-medium">{totalMoic?.toFixed(2) ?? '—'}x / {irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}</p><p className="mt-2 text-sm text-muted-foreground">Operating payback</p><p className="font-medium">{paybackYear === null ? `Beyond year ${years}` : `Year ${paybackYear}`}</p><p className="mt-3 text-xs text-muted-foreground">Annual operating cash flow: {yearlyOperatingCashFlow!.map((cashFlow, year) => `Y${year + 1} ${money(cashFlow, currency)}`).join(' · ')}</p></>}</div>
+        return <div key={name} className="rounded-lg border border-border bg-background p-4 flex flex-col justify-between">
+            <div>
+                <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                        <p className="font-semibold text-foreground">{name}</p>
+                        <DataOriginBadge
+                            origin="assumption"
+                            label="Scenario Model"
+                            metricLabel={`${name} Scenario Model`}
+                            description={`Assumes ${((growth ?? 0) * 100).toFixed(1)}% annual revenue growth and ${((margin ?? 0) * 100).toFixed(1)}% EBITDA margin.`}
+                            compact
+                        />
+                    </div>
+                    {onOpenEvidence ? (
+                        <button
+                            type="button"
+                            onClick={() => onOpenEvidence(scenarioEvidence)}
+                            aria-label={`Show how the ${name} scenario was calculated`}
+                            className="text-xs font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                        >
+                            How this was calculated
+                        </button>
+                    ) : null}
+                </div>
+                <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
+                    <span>Year {years} revenue / EBITDA</span>
+                    <DataOriginBadge
+                        origin="calculated"
+                        label="Projected"
+                        metricLabel={`Year ${years} Revenue / EBITDA (${name})`}
+                        metricValue={`${money(exitRevenue, currency)} / ${money(exitEbitda, currency)}`}
+                        formula={`Revenue × (1 + ${((growth ?? 0) * 100).toFixed(1)}%)^${years}; EBITDA = Revenue × ${((margin ?? 0) * 100).toFixed(1)}%`}
+                        description="Projected terminal year top-line revenue and operating EBITDA under this scenario."
+                        compact
+                    />
+                </div>
+                <p className="font-medium text-foreground">{money(exitRevenue, currency)} / {money(exitEbitda, currency)}</p>
+                <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
+                    <span>Net exit value</span>
+                    <DataOriginBadge
+                        origin="calculated"
+                        label="Exit Value"
+                        metricLabel={`Net exit value (${name})`}
+                        metricValue={money(netExitValue, currency)}
+                        formula={`Year-${years} EBITDA × ${multiple}x exit multiple − exit costs`}
+                        description="Net equity proceeds realized from terminal business sale at the target exit multiple."
+                        compact
+                    />
+                </div>
+                <p className="font-medium text-foreground">{money(netExitValue, currency)}</p>
+                {!allCashReady ? (
+                    <p className="mt-3 text-sm text-muted-foreground">Add price and tax rate for all-cash cash flow, MOIC, payback, and IRR.</p>
+                ) : (
+                    <>
+                        <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
+                            <span>All-cash MOIC / IRR</span>
+                            <DataOriginBadge
+                                origin="calculated"
+                                label="Returns"
+                                metricLabel={`All-cash MOIC / IRR (${name})`}
+                                metricValue={`${totalMoic?.toFixed(2) ?? '—'}x / ${irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}`}
+                                formula="IRR(all-cash timeline), MOIC(total inflows ÷ initial investment)"
+                                description="Comprehensive multiple on invested capital and internal rate of return across holding period."
+                                compact
+                            />
+                        </div>
+                        <p className="font-medium text-foreground">{totalMoic?.toFixed(2) ?? '—'}x / {irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}</p>
+                        <p className="mt-2 text-sm text-muted-foreground">Operating payback</p>
+                        <p className="font-medium text-foreground">{paybackYear === null ? `Beyond year ${years}` : `Year ${paybackYear}`}</p>
+                        <p className="mt-3 text-xs text-muted-foreground leading-relaxed">Annual operating cash flow: {yearlyOperatingCashFlow!.map((cashFlow, year) => `Y${year + 1} ${money(cashFlow, currency)}`).join(' · ')}</p>
+                    </>
+                )}
+            </div>
+        </div>
     })}</div></>}<p className="mt-4 text-xs text-muted-foreground">Revenue growth, margin, and exit multiple are scenario assumptions. Revenue is documented; price, tax, capex, working capital, fees, and exit costs are analyst assumptions unless separately documented. This is an all-cash scenario model; financed bear/base/bull modeling remains separate.</p></CardContent></Card>
 }

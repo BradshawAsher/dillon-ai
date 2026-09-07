@@ -25,6 +25,7 @@ function Metric({
     infoTerm,
     alignTip = 'center',
     statusBadge,
+    formula,
 }: {
     label: string
     value: string
@@ -34,6 +35,7 @@ function Metric({
     infoTerm?: string
     alignTip?: 'center' | 'left' | 'right'
     statusBadge?: ReactNode
+    formula?: string
 }) {
     const handleClick = () => {
         if (onOpenEvidence && evidence) {
@@ -51,7 +53,7 @@ function Metric({
                     <span className="text-xs font-semibold">{label}</span>
                     {infoTerm && FINANCIAL_TERMS[infoTerm] ? (
                         <span onClick={(e) => e.stopPropagation()}>
-                            <InfoTip term={infoTerm} definition={FINANCIAL_TERMS[infoTerm]} align={alignTip} />
+                            <InfoTip term={infoTerm} definition={FINANCIAL_TERMS[infoTerm]} formula={formula} align={alignTip} />
                         </span>
                     ) : null}
                 </div>
@@ -177,7 +179,18 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Equity contribution"
                             alignTip="left"
-                            statusBadge={<DataOriginBadge origin="calculated" label={priceIsConfirmed ? "Calculated (Saved Price)" : "Calculated (Preview Price)"} formula="total uses − senior debt − seller note" compact />}
+                            formula="total uses − senior debt − seller note"
+                            statusBadge={
+                                <DataOriginBadge
+                                    origin="calculated"
+                                    label={priceIsConfirmed ? "Calculated (Saved Price)" : "Calculated (Preview Price)"}
+                                    metricLabel="Equity at close"
+                                    metricValue={money(equity!)}
+                                    formula="total uses − senior debt − seller note"
+                                    description="Equity capital the buyer injects at closing after senior financing and any seller financing."
+                                    compact
+                                />
+                            }
                         />
                         <Metric
                             label="Annual debt service"
@@ -187,7 +200,18 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Amortization"
                             alignTip="left"
-                            statusBadge={<DataOriginBadge origin="calculated" label={priceIsConfirmed ? "Calculated (Level Debt)" : "Calculated (Model Debt)"} formula="PMT(rate, term, senior debt)" compact />}
+                            formula="PMT(rate, term, senior debt)"
+                            statusBadge={
+                                <DataOriginBadge
+                                    origin="calculated"
+                                    label={priceIsConfirmed ? "Calculated (Level Debt)" : "Calculated (Model Debt)"}
+                                    metricLabel="Annual debt service"
+                                    metricValue={money(annualDebtService!)}
+                                    formula="PMT(rate, term, senior debt)"
+                                    description="Annual principal and interest payment required to service the senior acquisition loan."
+                                    compact
+                                />
+                            }
                         />
                         <Metric
                             label="Cash after debt service"
@@ -197,7 +221,18 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Levered cash flow"
                             alignTip="center"
-                            statusBadge={<DataOriginBadge origin="calculated" label={ebitdaIsConfirmed ? "Calculated (Verified EBITDA)" : "Calculated (Illustrative)"} formula="EBITDA × (1 − tax) − debt service" compact />}
+                            formula="EBITDA × (1 − tax) − capex − annual debt service"
+                            statusBadge={
+                                <DataOriginBadge
+                                    origin="calculated"
+                                    label={ebitdaIsConfirmed ? "Calculated (Verified EBITDA)" : "Calculated (Illustrative)"}
+                                    metricLabel="Cash after debt service"
+                                    metricValue={money(cashAfterDebt!)}
+                                    formula="EBITDA × (1 − tax) − capex − annual debt service"
+                                    description="Levered net operating cash flow retained by equity owners after paying taxes, maintenance capex, and annual debt service."
+                                    compact
+                                />
+                            }
                         />
                         <Metric
                             label="Cash-on-cash return"
@@ -207,7 +242,18 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Cash-on-cash"
                             alignTip="right"
-                            statusBadge={<DataOriginBadge origin="calculated" label="Derived Return" formula="cash after debt ÷ equity" compact />}
+                            formula="cash after debt service ÷ equity at close"
+                            statusBadge={
+                                <DataOriginBadge
+                                    origin="calculated"
+                                    label="Derived Return"
+                                    metricLabel="Cash-on-cash return"
+                                    metricValue={coc === null ? 'Not available' : `${(coc * 100).toFixed(1)}%`}
+                                    formula="cash after debt service ÷ equity at close"
+                                    description="Annual pre-tax cash distribution to the buyer divided by initial equity invested at close."
+                                    compact
+                                />
+                            }
                         />
                         <Metric
                             label="Debt-service coverage (DSCR)"
@@ -217,7 +263,18 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="DSCR"
                             alignTip="left"
-                            statusBadge={<DataOriginBadge origin="calculated" label="Coverage Ratio" formula="operating cash flow ÷ annual debt service" compact />}
+                            formula="operating cash flow ÷ annual debt service"
+                            statusBadge={
+                                <DataOriginBadge
+                                    origin="calculated"
+                                    label="Coverage Ratio"
+                                    metricLabel="Debt-service coverage (DSCR)"
+                                    metricValue={dscr === null ? 'Not available' : `${dscr.toFixed(2)}x`}
+                                    formula="operating cash flow ÷ annual debt service"
+                                    description="Ratio of unlevered operating cash flow to scheduled debt payments. Institutional lenders require 1.25x or higher."
+                                    compact
+                                />
+                            }
                         />
                         <Metric
                             label="Debt balance at exit"
@@ -227,7 +284,18 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Debt balance"
                             alignTip="left"
-                            statusBadge={<DataOriginBadge origin="calculated" label="Calculated Balance" formula="Amortization schedule at year N" compact />}
+                            formula="Amortization balance after scheduled loan payments"
+                            statusBadge={
+                                <DataOriginBadge
+                                    origin="calculated"
+                                    label="Calculated Balance"
+                                    metricLabel="Debt balance at exit"
+                                    metricValue={debtBalanceAtExit === null ? 'Add hold period' : money(debtBalanceAtExit)}
+                                    formula="Amortization schedule remaining principal at year N"
+                                    description="Remaining principal on senior debt at exit that must be repaid from sale gross proceeds before distributions."
+                                    compact
+                                />
+                            }
                         />
                         <Metric
                             label="Net equity proceeds at exit"
@@ -237,7 +305,18 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="Net exit proceeds"
                             alignTip="center"
-                            statusBadge={<DataOriginBadge origin="calculated" label="Terminal Equity" formula="Exit EV − exit costs − remaining debt" compact />}
+                            formula="exit EV − transaction costs − remaining debt − seller note"
+                            statusBadge={
+                                <DataOriginBadge
+                                    origin="calculated"
+                                    label="Terminal Equity"
+                                    metricLabel="Net equity proceeds at exit"
+                                    metricValue={exitEquityProceeds === null ? 'Add exit inputs' : money(exitEquityProceeds)}
+                                    formula="exit EV − transaction costs − remaining debt − seller note"
+                                    description="Net cash available to equity owners after selling the business, paying transaction fees, and paying off debt."
+                                    compact
+                                />
+                            }
                         />
                         <Metric
                             label="Total MOIC / IRR"
@@ -247,7 +326,18 @@ export default function FinancedReturnsCard({ model, documents = [], onOpenEvide
                             onOpenEvidence={onOpenEvidence}
                             infoTerm="MOIC"
                             alignTip="right"
-                            statusBadge={<DataOriginBadge origin="calculated" label="Levered Returns" formula="IRR(cash flows), MOIC(total inflows / equity)" compact />}
+                            formula="IRR(levered cash flows), MOIC(total levered inflows ÷ initial equity)"
+                            statusBadge={
+                                <DataOriginBadge
+                                    origin="calculated"
+                                    label="Levered Returns"
+                                    metricLabel="Total MOIC / IRR"
+                                    metricValue={!exitReady ? 'Add exit inputs' : `${totalMoic?.toFixed(2) ?? '—'}x / ${irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}`}
+                                    formula="IRR(cash flows), MOIC(total inflows ÷ equity)"
+                                    description="Total multiple on invested capital and internal rate of return across all operating cash flows and terminal sale."
+                                    compact
+                                />
+                            }
                         />
                     </div>
                 )}

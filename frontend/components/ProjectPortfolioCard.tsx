@@ -854,7 +854,7 @@ export default function ProjectPortfolioCard({ rows, syntheses, activeProjectKey
                                             <ExpandableText text={project.recommendation} maxHeight={80} className="mt-2 text-sm leading-6 text-foreground" />
                                         </div>
 
-                                        <details id={isPrimaryActiveCard ? 'project-card-documents' : undefined} open className="mt-4 rounded-lg border border-border bg-muted/20 p-4 scroll-mt-6">
+                                        <details id={isPrimaryActiveCard ? 'project-card-documents' : undefined} className="mt-4 rounded-lg border border-border bg-muted/20 p-4 scroll-mt-6">
                                             <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
                                                 <summary className="cursor-pointer text-sm font-semibold text-foreground">
                                                     Documents in this project ({visibleDocuments.length}

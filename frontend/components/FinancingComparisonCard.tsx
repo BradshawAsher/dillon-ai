@@ -6,6 +6,7 @@ import { parseDocumentedFacts } from '../utils/evidence'
 import { computeAmortizingLoan, normalizePercentageFraction, resolveLoanTermYears, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
+import DataOriginBadge from './common/DataOriginBadge'
 
 type Props = {
     model: DealModel
@@ -93,9 +94,19 @@ export default function FinancingComparisonCard({ model }: Props) {
             <CardContent className="p-4">
                 <div className="space-y-3">
                     {data.options.map((opt, i) => (
-                        <div key={i} className="rounded-lg border border-border p-3">
-                            <div className="flex items-center justify-between mb-2">
-                                <p className="text-xs font-semibold text-foreground">{opt.label}</p>
+                        <div key={i} className="rounded-lg border border-border p-3 space-y-2">
+                            <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-1.5">
+                                    <p className="text-xs font-semibold text-foreground">{opt.label}</p>
+                                    <DataOriginBadge
+                                        origin="assumption"
+                                        label={opt.label}
+                                        metricLabel={`${opt.label} Capital Structure`}
+                                        metricValue={`Equity: ${fmt(opt.equity)} · Debt: ${fmt(opt.debt)}`}
+                                        description={`Capital structure allocation with ${((opt.equity / data.price) * 100).toFixed(0)}% equity, ${((opt.debt / data.price) * 100).toFixed(0)}% senior debt, and ${((opt.sellerNote / data.price) * 100).toFixed(0)}% seller financing.`}
+                                        compact
+                                    />
+                                </div>
                                 <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${riskColor(opt.risk)}`}>
                                     {opt.risk} risk
                                 </span>
@@ -108,23 +119,63 @@ export default function FinancingComparisonCard({ model }: Props) {
                             </div>
 
                             <div className="grid grid-cols-4 gap-2 text-center">
-                                <div>
-                                    <p className="text-[9px] text-muted-foreground">Equity needed</p>
-                                    <p className="text-[11px] font-bold text-foreground">{fmt(opt.equity)}</p>
+                                <div className="flex flex-col items-center">
+                                    <div className="flex items-center gap-0.5">
+                                        <p className="text-[9px] text-muted-foreground">Equity needed</p>
+                                        <DataOriginBadge
+                                            origin="calculated"
+                                            metricLabel={`Equity Needed (${opt.label})`}
+                                            metricValue={fmt(opt.equity)}
+                                            formula="Purchase Price × Equity %"
+                                            description="Upfront cash equity investment required from buyer."
+                                            compact
+                                        />
+                                    </div>
+                                    <p className="text-[11px] font-bold text-foreground mt-0.5">{fmt(opt.equity)}</p>
                                 </div>
-                                <div>
-                                    <p className="text-[9px] text-muted-foreground">Monthly debt</p>
-                                    <p className="text-[11px] font-bold text-foreground">{fmt(opt.monthlyDebt)}</p>
+                                <div className="flex flex-col items-center">
+                                    <div className="flex items-center gap-0.5">
+                                        <p className="text-[9px] text-muted-foreground">Monthly debt</p>
+                                        <DataOriginBadge
+                                            origin="calculated"
+                                            metricLabel={`Monthly Debt (${opt.label})`}
+                                            metricValue={fmt(opt.monthlyDebt)}
+                                            formula="Amortizing monthly debt payment"
+                                            description="Monthly senior and seller debt service obligations."
+                                            compact
+                                        />
+                                    </div>
+                                    <p className="text-[11px] font-bold text-foreground mt-0.5">{fmt(opt.monthlyDebt)}</p>
                                 </div>
-                                <div>
-                                    <p className="text-[9px] text-muted-foreground">Cash-on-cash</p>
-                                    <p className={`text-[11px] font-bold ${opt.cashOnCash >= 20 ? 'text-green-600' : opt.cashOnCash >= 10 ? 'text-amber-600' : 'text-red-600'}`}>
+                                <div className="flex flex-col items-center">
+                                    <div className="flex items-center gap-0.5">
+                                        <p className="text-[9px] text-muted-foreground">Cash-on-cash</p>
+                                        <DataOriginBadge
+                                            origin="calculated"
+                                            metricLabel={`Cash-on-Cash Return (${opt.label})`}
+                                            metricValue={`${opt.cashOnCash.toFixed(0)}%`}
+                                            formula="(Annual Cash Flow ÷ Equity) × 100"
+                                            description="Initial annual pre-tax return on invested equity capital."
+                                            compact
+                                        />
+                                    </div>
+                                    <p className={`text-[11px] font-bold mt-0.5 ${opt.cashOnCash >= 20 ? 'text-green-600' : opt.cashOnCash >= 10 ? 'text-amber-600' : 'text-red-600'}`}>
                                         {opt.cashOnCash.toFixed(0)}%
                                     </p>
                                 </div>
-                                <div>
-                                    <p className="text-[9px] text-muted-foreground">DSCR</p>
-                                    <p className={`text-[11px] font-bold ${opt.dscr >= 1.5 ? 'text-green-600' : opt.dscr >= 1.2 ? 'text-amber-600' : 'text-red-600'}`}>
+                                <div className="flex flex-col items-center">
+                                    <div className="flex items-center gap-0.5">
+                                        <p className="text-[9px] text-muted-foreground">DSCR</p>
+                                        <DataOriginBadge
+                                            origin="calculated"
+                                            metricLabel={`DSCR (${opt.label})`}
+                                            metricValue={opt.dscr > 10 ? '∞' : `${opt.dscr.toFixed(1)}x`}
+                                            formula="Operating Cash Flow ÷ Annual Debt Service"
+                                            description="Debt service coverage ratio under this financing structure."
+                                            compact
+                                        />
+                                    </div>
+                                    <p className={`text-[11px] font-bold mt-0.5 ${opt.dscr >= 1.5 ? 'text-green-600' : opt.dscr >= 1.2 ? 'text-amber-600' : 'text-red-600'}`}>
                                         {opt.dscr > 10 ? '∞' : `${opt.dscr.toFixed(1)}x`}
                                     </p>
                                 </div>

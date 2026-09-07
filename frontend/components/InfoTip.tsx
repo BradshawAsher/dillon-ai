@@ -1,4 +1,4 @@
-import { Info } from 'lucide-react'
+import { Info, Bot } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useFloatingPosition } from '../hooks/useFloatingPosition'
@@ -6,6 +6,7 @@ import { useFloatingPosition } from '../hooks/useFloatingPosition'
 type Props = {
     term: string
     definition: string
+    formula?: string
     align?: 'center' | 'left' | 'right'
 }
 
@@ -36,9 +37,10 @@ export const FINANCIAL_TERMS: Record<string, string> = {
     'Debt balance': 'The remaining principal balance on senior debt at the end of the hold period that must be paid off upon sale.',
 }
 
-export default function InfoTip({ term, definition }: Props) {
+export default function InfoTip({ term, definition, formula }: Props) {
     const [open, setOpen] = useState(false)
     const buttonRef = useRef<HTMLButtonElement>(null)
+    const closeTimeoutRef = useRef<number | null>(null)
 
     const coords = useFloatingPosition({
         isOpen: open,
@@ -48,6 +50,31 @@ export default function InfoTip({ term, definition }: Props) {
         margin: 6,
         padding: 12,
     })
+
+    const handleMouseEnter = () => {
+        if (closeTimeoutRef.current !== null) {
+            window.clearTimeout(closeTimeoutRef.current)
+            closeTimeoutRef.current = null
+        }
+        setOpen(true)
+    }
+
+    const handleMouseLeave = () => {
+        if (closeTimeoutRef.current !== null) {
+            window.clearTimeout(closeTimeoutRef.current)
+        }
+        closeTimeoutRef.current = window.setTimeout(() => {
+            setOpen(false)
+        }, 180)
+    }
+
+    useEffect(() => {
+        return () => {
+            if (closeTimeoutRef.current !== null) {
+                window.clearTimeout(closeTimeoutRef.current)
+            }
+        }
+    }, [])
 
     useEffect(() => {
         if (!open) return
@@ -67,16 +94,37 @@ export default function InfoTip({ term, definition }: Props) {
         }
     }, [open])
 
+    const handleAskAi = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        setOpen(false)
+        const projectName = (typeof window !== 'undefined' && (window as any).__mergeworks_active_project_name) || 'this deal'
+        const formulaStr = formula ? ` (Formula: "${formula}")` : ''
+        const question = `Can you explain what "${term}"${formulaStr} means in SMB M&A diligence on ${projectName}, how it affects deal value or risk, and what benchmark or threshold a buyer should target?`
+
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+                new CustomEvent('mergeworks:open-chat-ask', {
+                    detail: {
+                        question,
+                        topic: term,
+                    },
+                })
+            )
+        }
+    }
+
     return (
-        <span className="relative inline-flex items-center align-middle shrink-0">
+        <span
+            className="relative inline-flex items-center align-middle shrink-0"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
             <button
                 ref={buttonRef}
                 type="button"
                 onClick={() => setOpen(o => !o)}
-                onMouseEnter={() => setOpen(true)}
-                onMouseLeave={() => setOpen(false)}
-                onFocus={() => setOpen(true)}
-                onBlur={() => setOpen(false)}
+                onFocus={handleMouseEnter}
+                onBlur={handleMouseLeave}
                 className="inline-flex items-center justify-center rounded-full p-0.5 text-muted-foreground/60 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
                 aria-label={`What is ${term}?`}
                 aria-expanded={open}
@@ -86,6 +134,8 @@ export default function InfoTip({ term, definition }: Props) {
             {open && typeof document !== 'undefined' && createPortal(
                 <span
                     role="tooltip"
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
                     style={{
                         position: 'fixed',
                         top: coords.top !== undefined ? `${coords.top}px` : undefined,
@@ -96,10 +146,26 @@ export default function InfoTip({ term, definition }: Props) {
                         maxHeight: coords.maxHeight !== undefined ? `${coords.maxHeight}px` : undefined,
                         zIndex: 99999,
                     }}
-                    className="overflow-y-auto rounded-lg border border-border bg-popover px-3 py-2 text-xs leading-relaxed text-popover-foreground shadow-xl ring-1 ring-border/50 animate-in fade-in-0 zoom-in-95 duration-100 pointer-events-none"
+                    className="overflow-y-auto rounded-lg border border-border bg-popover px-3 py-2 text-xs leading-relaxed text-popover-foreground shadow-xl ring-1 ring-border/50 animate-in fade-in-0 zoom-in-95 duration-100"
                 >
                     <span className="font-semibold block mb-0.5 text-foreground">{term}</span>
-                    <span className="text-muted-foreground">{definition}</span>
+                    <span className="text-muted-foreground block">{definition}</span>
+                    {formula ? (
+                        <span className="mt-1.5 block rounded bg-muted/60 px-2 py-1 font-mono text-[10px] text-foreground border border-border/50">
+                            <span className="font-semibold font-sans text-muted-foreground mr-1">Formula:</span>
+                            {formula}
+                        </span>
+                    ) : null}
+                    <span className="mt-2 block border-t border-border/60 pt-1.5">
+                        <button
+                            type="button"
+                            onClick={handleAskAi}
+                            className="flex w-full items-center justify-center gap-1.5 rounded border border-primary/30 bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer shadow-2xs"
+                        >
+                            <Bot className="h-3 w-3" />
+                            <span>Ask AI to Explain</span>
+                        </button>
+                    </span>
                 </span>,
                 document.body
             )}

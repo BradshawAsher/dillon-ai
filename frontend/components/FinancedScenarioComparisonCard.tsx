@@ -7,6 +7,7 @@ import { GrowthLineChart, type ChartDatum } from './DealCharts'
 import { calculateIrr, computeAmortizingLoan, normalizeEquityFraction, normalizePercentageFraction, resolveLoanTermYears, DEAL_MATH_DEFAULTS } from '../utils/dealMath'
 import InfoTip, { FINANCIAL_TERMS } from './InfoTip'
 import CardInfoPopover from './common/CardInfoPopover'
+import DataOriginBadge from './common/DataOriginBadge'
 
 function money(value: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
@@ -87,9 +88,90 @@ export default function FinancedScenarioComparisonCard({ model }: { model: DealM
                     const yearOneDscr = annualDebtService! > 0 ? (yearlyRevenue[0] * scenario.margin * (1 - tax) - capex) / annualDebtService! : null
                     const tone = scenario.name === 'Bear' ? 'border-warning/30 bg-warning/5' : scenario.name === 'Bull' ? 'border-success/30 bg-success/5' : 'border-primary/30 bg-primary/5'
                     return <div key={scenario.name} className={`rounded-xl border p-4 ${tone}`}>
-                        <div className="flex items-center justify-between"><p className="font-semibold text-foreground">{scenario.name}</p><Badge variant="outline">{(scenario.growth * 100).toFixed(1)}% growth</Badge></div>
-                        <p className="mt-3 text-xs text-muted-foreground">Levered MOIC <InfoTip term="MOIC" definition={FINANCIAL_TERMS['MOIC']} /> / IRR <InfoTip term="IRR" definition={FINANCIAL_TERMS['IRR']} /></p><p className="mt-1 text-xl font-semibold text-foreground">{moic.toFixed(2)}x / {irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}</p>
-                        <div className="mt-4 space-y-2 text-sm"><div className="flex justify-between gap-3"><span className="text-muted-foreground">Year-{holdPeriod} revenue</span><span className="font-medium">{money(yearlyRevenue[yearlyRevenue.length - 1])}</span></div><div className="flex justify-between gap-3"><span className="text-muted-foreground">Exit EBITDA <InfoTip term="EBITDA" definition={FINANCIAL_TERMS['EBITDA']} /></span><span className="font-medium">{money(exitEbitda)}</span></div><div className="flex justify-between gap-3"><span className="text-muted-foreground">Exit equity proceeds</span><span className="font-medium">{money(exitProceeds)}</span></div><div className="flex justify-between gap-3"><span className="text-muted-foreground">Year-one DSCR <InfoTip term="DSCR" definition={FINANCIAL_TERMS['DSCR']} /></span><span className="font-medium">{yearOneDscr === null ? 'Not available' : `${yearOneDscr.toFixed(2)}x`}</span></div></div>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                                <p className="font-semibold text-foreground">{scenario.name}</p>
+                                <DataOriginBadge
+                                    origin="assumption"
+                                    label={`${scenario.name} Case`}
+                                    metricLabel={`${scenario.name} Financed Scenario`}
+                                    metricValue={`${(scenario.growth * 100).toFixed(1)}% growth · ${(scenario.margin * 100).toFixed(1)}% margin`}
+                                    description={`Financed underwriting outcome under ${scenario.name.toLowerCase()} growth (${(scenario.growth * 100).toFixed(1)}%), margin (${(scenario.margin * 100).toFixed(1)}%), and ${scenario.exitMultiple}x exit multiple.`}
+                                    compact
+                                />
+                            </div>
+                            <Badge variant="outline">{(scenario.growth * 100).toFixed(1)}% growth</Badge>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">Levered MOIC / IRR</span>
+                            <DataOriginBadge
+                                origin="calculated"
+                                metricLabel={`Levered MOIC / IRR (${scenario.name})`}
+                                metricValue={`${moic.toFixed(2)}x / ${irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}`}
+                                formula="IRR(levered cash flows), MOIC(total inflows ÷ equity)"
+                                description="Comprehensive internal rate of return and multiple on invested equity under debt amortization."
+                                compact
+                            />
+                        </div>
+                        <p className="mt-1 text-xl font-semibold text-foreground">{moic.toFixed(2)}x / {irr === null ? 'Not available' : `${(irr * 100).toFixed(1)}%`}</p>
+                        <div className="mt-4 space-y-2 text-sm">
+                            <div className="flex justify-between items-center gap-3">
+                                <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">Year-{holdPeriod} revenue</span>
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        metricLabel={`Year-${holdPeriod} Revenue (${scenario.name})`}
+                                        metricValue={money(yearlyRevenue[yearlyRevenue.length - 1])}
+                                        formula={`Starting Revenue × (1 + ${(scenario.growth * 100).toFixed(1)}%)^${holdPeriod}`}
+                                        description="Projected terminal year top-line revenue under this scenario."
+                                        compact
+                                    />
+                                </div>
+                                <span className="font-medium">{money(yearlyRevenue[yearlyRevenue.length - 1])}</span>
+                            </div>
+                            <div className="flex justify-between items-center gap-3">
+                                <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">Exit EBITDA</span>
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        metricLabel={`Exit EBITDA (${scenario.name})`}
+                                        metricValue={money(exitEbitda)}
+                                        formula={`Year-${holdPeriod} Revenue × ${(scenario.margin * 100).toFixed(1)}%`}
+                                        description="Projected terminal year EBITDA operating earnings."
+                                        compact
+                                    />
+                                </div>
+                                <span className="font-medium">{money(exitEbitda)}</span>
+                            </div>
+                            <div className="flex justify-between items-center gap-3">
+                                <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">Exit equity proceeds</span>
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        metricLabel={`Exit Equity Proceeds (${scenario.name})`}
+                                        metricValue={money(exitProceeds)}
+                                        formula="Exit EBITDA × Exit Multiple − Exit Costs − Debt at Exit − Seller Note"
+                                        description="Net equity proceeds distributed to buyer after senior loan payoff and transaction fees."
+                                        compact
+                                    />
+                                </div>
+                                <span className="font-medium">{money(exitProceeds)}</span>
+                            </div>
+                            <div className="flex justify-between items-center gap-3">
+                                <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">Year-one DSCR</span>
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        metricLabel={`Year-One DSCR (${scenario.name})`}
+                                        metricValue={yearOneDscr === null ? 'Not available' : `${yearOneDscr.toFixed(2)}x`}
+                                        formula="Year 1 After-Tax Operating Cash Flow ÷ Annual Debt Service"
+                                        description="Initial debt service coverage ratio under Year 1 operating cash flow."
+                                        compact
+                                    />
+                                </div>
+                                <span className="font-medium">{yearOneDscr === null ? 'Not available' : `${yearOneDscr.toFixed(2)}x`}</span>
+                            </div>
+                        </div>
                         <p className="mt-4 text-xs leading-5 text-muted-foreground">Growth, EBITDA margin, and exit multiple are saved model assumptions for each scenario. Financing terms are also shared saved model assumptions, not ad-hoc analyst overrides.</p>
                     </div>
                 })}

@@ -5,6 +5,7 @@ import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
+import DataOriginBadge from './common/DataOriginBadge'
 import { calculateWorkingCapitalPeg, type RollingTimeframe } from '../utils/workingCapitalPeg'
 import { normalizePercentageFraction } from '../utils/dealMath'
 
@@ -164,19 +165,52 @@ export default function WorkingCapitalCard({ model }: Props) {
 
                         {/* Collar & Volatility Stats */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
-                            <div className="rounded-lg border border-border bg-card/60 p-2">
-                                <p className="text-[10px] text-muted-foreground">Target Peg</p>
-                                <p className="font-bold text-primary">${pegResult.targetPeg.toLocaleString()}</p>
+                            <div className="rounded-lg border border-border bg-card/60 p-2 flex flex-col justify-between">
+                                <div className="flex items-center justify-between gap-1">
+                                    <p className="text-[10px] text-muted-foreground font-medium">Target Peg</p>
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        label="Normalized Peg"
+                                        metricLabel="Target Net Working Capital Peg"
+                                        metricValue={`$${pegResult.targetPeg.toLocaleString()}`}
+                                        formula={`Mean trailing ${selectedTimeframe} monthly NWC (Current Assets excl. cash − Current Liabilities excl. debt)`}
+                                        description="Target dollar amount of operational working capital the seller must deliver debt-free and cash-free at transaction close."
+                                        compact
+                                    />
+                                </div>
+                                <p className="font-bold text-primary mt-1">${pegResult.targetPeg.toLocaleString()}</p>
                             </div>
-                            <div className="rounded-lg border border-border bg-card/60 p-2">
-                                <p className="text-[10px] text-muted-foreground">Collar (±{collarPercent}%)</p>
-                                <p className="font-semibold text-foreground text-[11px]">
+                            <div className="rounded-lg border border-border bg-card/60 p-2 flex flex-col justify-between">
+                                <div className="flex items-center justify-between gap-1">
+                                    <p className="text-[10px] text-muted-foreground font-medium">Collar (±{collarPercent}%)</p>
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        label="Buffer Collar"
+                                        metricLabel={`Working Capital Collar (±${collarPercent}%)`}
+                                        metricValue={`$${pegResult.collarLowerLimit.toLocaleString()} – $${pegResult.collarUpperLimit.toLocaleString()}`}
+                                        formula={`Target Peg ± (Target Peg × ${collarPercent}%)`}
+                                        description="Contractual corridor around the target peg within which minor fluctuations trigger zero purchase price adjustment."
+                                        compact
+                                    />
+                                </div>
+                                <p className="font-semibold text-foreground text-[11px] mt-1">
                                     ${pegResult.collarLowerLimit.toLocaleString()} – ${pegResult.collarUpperLimit.toLocaleString()}
                                 </p>
                             </div>
-                            <div className="rounded-lg border border-border bg-card/60 p-2">
-                                <p className="text-[10px] text-muted-foreground">Seasonal Swing</p>
-                                <p className="font-semibold text-foreground">${pegResult.nwcSwing.toLocaleString()}</p>
+                            <div className="rounded-lg border border-border bg-card/60 p-2 flex flex-col justify-between">
+                                <div className="flex items-center justify-between gap-1">
+                                    <p className="text-[10px] text-muted-foreground font-medium">Seasonal Swing</p>
+                                    <DataOriginBadge
+                                        origin="calculated"
+                                        label="Max Volatility"
+                                        metricLabel="Seasonal NWC Volatility"
+                                        metricValue={`$${pegResult.nwcSwing.toLocaleString()} (±${pegResult.volatilityPercent}%)`}
+                                        formula="Peak Monthly NWC − Trough Monthly NWC"
+                                        description="Maximum seasonal capital expansion requiring intra-year liquidity or a dedicated revolving line of credit."
+                                        compact
+                                    />
+                                </div>
+                                <p className="font-semibold text-foreground mt-1">${pegResult.nwcSwing.toLocaleString()}</p>
                                 <p className="text-[9px] text-muted-foreground">±{pegResult.volatilityPercent}% volatility</p>
                             </div>
                             <div className="rounded-lg border border-border bg-card/60 p-2">

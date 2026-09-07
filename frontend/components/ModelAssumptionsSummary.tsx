@@ -166,7 +166,7 @@ function buildRow(label: string, valueStr: string, isSet: boolean): AssumptionRo
         isSet,
         isPreview: !isSet,
         evidence: {
-            metricName: `${label} (${isSet ? 'Saved User Input' : 'Default Proxy Assumption'})`,
+            metricName: `${label} (${isSet ? 'Saved User Input' : 'Default Benchmark Assumption'})`,
             valueFormatted: valueStr,
             sourceDoc: isSet ? 'Custom User Deal Model' : 'Standard Private Equity & SMB Benchmark Rules',
             quoteSnippet: `Definition: ${vocab.definition}`,
@@ -299,7 +299,7 @@ export default function ModelAssumptionsSummary({ model, area }: Props) {
                                 </div>
                                 <p className="mt-1 text-sm font-bold text-foreground group-hover:text-primary transition-colors">{row.value}</p>
                                 <p className={`mt-0.5 text-[10px] font-semibold ${row.isSet ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                                    {row.isSet ? '✓ Saved Input' : '⚠ Preview Proxy'}
+                                    {row.isSet ? '✓ Saved Input' : '⚠ Default Assumption'}
                                 </p>
                             </div>
                         </InPlaceEvidencePopover>

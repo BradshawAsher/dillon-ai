@@ -69,7 +69,14 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
                         <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-1.5">
                                 <span className="text-xs font-medium text-foreground">Asking Price</span>
-                                <DataOriginBadge origin="user_entered" compact />
+                                <DataOriginBadge
+                                    origin="user_entered"
+                                    label="Asking Price"
+                                    metricLabel="Seller Asking Price"
+                                    metricValue={`$${data.askingPrice.toLocaleString()}`}
+                                    description="Initial valuation demanded by seller / intermediary in deal teaser or offering memorandum."
+                                    compact
+                                />
                             </div>
                             <span className="text-xs font-semibold text-foreground">${data.askingPrice.toLocaleString()}</span>
                         </div>
@@ -81,7 +88,15 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
                         <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-1.5">
                                 <span className="text-xs font-medium text-foreground">Fair Value Estimate</span>
-                                <DataOriginBadge origin="calculated" formula="EBITDA × 4.0x or AI Synthesis Valuation" compact />
+                                <DataOriginBadge
+                                    origin="calculated"
+                                    label="Fair Value"
+                                    metricLabel="Fair Value Estimate"
+                                    metricValue={`$${data.fairValue.toLocaleString()}`}
+                                    formula="EBITDA × 4.0x or AI Synthesis Valuation"
+                                    description="Unadjusted standalone valuation based on verified historical earnings and sector median multiple."
+                                    compact
+                                />
                             </div>
                             <span className="text-xs font-semibold text-foreground">${data.fairValue.toLocaleString()}</span>
                         </div>
@@ -93,7 +108,15 @@ export default function ValuationGapCard({ model, synthesis }: Props) {
                         <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-1.5">
                                 <span className="text-xs font-medium text-foreground">Total Potential Value</span>
-                                <DataOriginBadge origin="calculated" formula="Fair Value + Productivity Gain + Margin Improvement" compact />
+                                <DataOriginBadge
+                                    origin="calculated"
+                                    label="Potential"
+                                    metricLabel="Total Potential Value"
+                                    metricValue={`$${data.totalPotentialValue.toLocaleString()}`}
+                                    formula="Fair Value + Productivity Gain + Margin Improvement"
+                                    description="Estimated enterprise value achievable post-acquisition through margin expansion and operational efficiencies."
+                                    compact
+                                />
                             </div>
                             <span className="text-xs font-semibold text-foreground">${data.totalPotentialValue.toLocaleString()}</span>
                         </div>

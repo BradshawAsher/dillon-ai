@@ -157,7 +157,15 @@ export default function LeverageSafetyCard({ model }: Props) {
                     <div className="rounded-lg bg-muted/50 p-2">
                         <div className="flex items-center justify-center gap-1 mb-0.5">
                             <p className="text-[10px] text-muted-foreground">Current DSCR</p>
-                            <DataOriginBadge origin="calculated" compact />
+                            <DataOriginBadge
+                                origin="calculated"
+                                label="DSCR"
+                                metricLabel="Current Debt-Service Coverage (DSCR)"
+                                metricValue={`${data.currentDscr.toFixed(2)}x`}
+                                formula="operating cash flow ÷ annual debt service"
+                                description="Coverage ratio of operating cash flow to scheduled debt obligations. Target is 1.25x or higher."
+                                compact
+                            />
                         </div>
                         <p className={`text-sm font-bold ${dscrColor(data.currentDscr)}`}>
                             {data.currentDscr.toFixed(2)}x
@@ -166,7 +174,15 @@ export default function LeverageSafetyCard({ model }: Props) {
                     <div className="rounded-lg bg-muted/50 p-2">
                         <div className="flex items-center justify-center gap-1 mb-0.5">
                             <p className="text-[10px] text-muted-foreground">Debt/EBITDA</p>
-                            <DataOriginBadge origin="calculated" compact />
+                            <DataOriginBadge
+                                origin="calculated"
+                                label="Leverage"
+                                metricLabel="Debt / EBITDA Leverage Ratio"
+                                metricValue={`${data.currentLeverage.toFixed(1)}x`}
+                                formula="senior debt ÷ confirmed EBITDA/SDE"
+                                description="Senior debt multiple relative to historical earnings. Most commercial lenders cap small acquisitions at 3.0x to 4.5x."
+                                compact
+                            />
                         </div>
                         <p className={`text-sm font-bold ${data.currentLeverage <= 3 ? 'text-green-600' : data.currentLeverage <= 4.5 ? 'text-amber-600' : 'text-red-600'}`}>
                             {data.currentLeverage.toFixed(1)}x
@@ -175,7 +191,15 @@ export default function LeverageSafetyCard({ model }: Props) {
                     <div className="rounded-lg bg-muted/50 p-2">
                         <div className="flex items-center justify-center gap-1 mb-0.5">
                             <p className="text-[10px] text-muted-foreground">SBA Default Cushion</p>
-                            <DataOriginBadge origin="calculated" compact />
+                            <DataOriginBadge
+                                origin="calculated"
+                                label="Cushion"
+                                metricLabel="SBA Default Cushion"
+                                metricValue={`${data.breakpointPct}%`}
+                                formula="percentage drop in EBITDA before DSCR reaches 1.0x"
+                                description="Maximum revenue or EBITDA contraction the business can endure before cash flow fails to cover mandatory debt service."
+                                compact
+                            />
                         </div>
                         <p className={`text-sm font-bold ${data.breakpointPct >= 30 ? 'text-green-600' : data.breakpointPct >= 15 ? 'text-amber-600' : 'text-red-600'}`}>
                             {data.breakpointPct}%

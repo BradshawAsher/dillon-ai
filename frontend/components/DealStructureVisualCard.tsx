@@ -107,11 +107,115 @@ export default function DealStructureVisualCard({ model, onOpenEvidence }: { mod
             {isIllustrativePreview ? <div role="alert" className="rounded-lg border-2 border-destructive/60 bg-destructive/10 p-4 text-sm text-foreground shadow-sm"><div className="flex items-center gap-2 text-destructive"><TriangleAlert className="h-5 w-5 shrink-0" /><p className="font-bold uppercase tracking-wide">Illustrative model preview — not source-backed</p></div><p className="mt-2 font-medium">This card uses display-only starting values because this project is still missing a saved price.</p><p className="mt-1 text-muted-foreground">Nothing in this preview is saved to the project; returned facts and your saved model assumptions replace it automatically.</p></div> : null}
             <>
                 <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-lg border border-border bg-background p-3"><p className="text-xs text-muted-foreground">Total uses</p><p className="mt-1 text-lg font-semibold">{money(uses)}</p></div>
-                    <div className="rounded-lg border border-border bg-background p-3"><p className="text-xs text-muted-foreground">Illustrative equity</p><p className="mt-1 text-lg font-semibold">{money(equity)}</p></div>
-                    <div className="rounded-lg border border-border bg-background p-3"><p className="text-xs text-muted-foreground">Illustrative senior debt</p><p className="mt-1 text-lg font-semibold">{money(seniorDebt)}</p></div>
+                    <div className="rounded-lg border border-border bg-background p-3 flex flex-col justify-between">
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                            <p className="text-xs text-muted-foreground font-medium">Total uses</p>
+                            <DataOriginBadge
+                                origin="calculated"
+                                label={savedPrice ? "Calculated (Saved Price)" : "Calculated (Preview Price)"}
+                                metricLabel="Total uses"
+                                metricValue={money(uses)}
+                                formula="purchase price + transaction fees + working capital"
+                                description="Total capital needed to acquire the business and fund initial working capital."
+                                compact
+                            />
+                        </div>
+                        <p className="mt-1 text-lg font-bold text-foreground">{money(uses)}</p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">purchase price + fees + working capital</p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-background p-3 flex flex-col justify-between">
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                            <p className="text-xs text-muted-foreground font-medium">{isIllustrativePreview ? 'Illustrative equity' : 'Buyer equity'}</p>
+                            <DataOriginBadge
+                                origin={model.equityContributionPercent ? "user_entered" : "benchmark"}
+                                label={model.equityContributionPercent ? "Saved Equity %" : "30% Benchmark"}
+                                metricLabel="Buyer equity"
+                                metricValue={money(equity)}
+                                formula="total uses × equity contribution %"
+                                description="Initial equity capital injected by the buyer at close."
+                                compact
+                            />
+                        </div>
+                        <p className="mt-1 text-lg font-bold text-foreground">{money(equity)}</p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">total uses × {(equityPercent * 100).toFixed(0)}%</p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-background p-3 flex flex-col justify-between">
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                            <p className="text-xs text-muted-foreground font-medium">{isIllustrativePreview ? 'Illustrative senior debt' : 'Senior debt'}</p>
+                            <DataOriginBadge
+                                origin="calculated"
+                                label="Debt Plug"
+                                metricLabel="Senior debt"
+                                metricValue={money(seniorDebt)}
+                                formula="total uses − buyer equity − seller note"
+                                description="Senior bank or SBA borrowing required to fund remaining acquisition uses."
+                                compact
+                            />
+                        </div>
+                        <p className="mt-1 text-lg font-bold text-foreground">{money(seniorDebt)}</p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">total uses − equity − seller note</p>
+                    </div>
                 </div>
-                <div className="rounded-lg border border-border bg-muted/20 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold">Leverage and downside resilience</p><p className="mt-1 text-xs text-muted-foreground">These are screening indicators, not lender underwriting.</p></div>{hasIllustrativeFinancing ? <Badge variant="warning">Financing assumptions included</Badge> : <Badge variant="outline">Saved financing inputs</Badge>}</div><div className="mt-3 grid gap-3 sm:grid-cols-3"><div className="rounded-md border border-border bg-background p-3"><p className="text-xs text-muted-foreground">Debt funding</p><p className="mt-1 text-lg font-semibold">{uses > 0 ? `${((seniorDebt / uses) * 100).toFixed(0)}%` : '—'}</p><p className="mt-1 text-xs text-muted-foreground">senior debt ÷ total uses</p></div><div className="rounded-md border border-border bg-background p-3"><p className="text-xs text-muted-foreground">Debt / EBITDA</p><p className="mt-1 text-lg font-semibold">{leverage === null ? 'Needs EBITDA' : `${leverage.toFixed(1)}x`}</p><p className="mt-1 text-xs text-muted-foreground">senior debt ÷ confirmed EBITDA/SDE</p></div><div className="rounded-md border border-border bg-background p-3"><p className="text-xs text-muted-foreground">Debt-service coverage</p><p className="mt-1 text-lg font-semibold">{dscr === null ? 'Needs EBITDA' : `${dscr.toFixed(2)}x`}</p><p className="mt-1 text-xs text-muted-foreground">operating cash flow ÷ annual debt service</p></div></div>{dscr !== null && dscr < 1.25 ? <p className="mt-3 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">Downside resilience is thin: DSCR is below 1.25×. Consider lower leverage, more equity, a seller note, or revised terms.</p> : leverage !== null && leverage > 5 ? <p className="mt-3 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">Leverage is above 5.0× confirmed EBITDA/SDE. Review cash-flow downside and lender constraints before relying on this structure.</p> : null}</div>
+                <div className="rounded-lg border border-border bg-muted/20 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <p className="text-sm font-semibold">Leverage and downside resilience</p>
+                            <p className="mt-1 text-xs text-muted-foreground">These are screening indicators, not lender underwriting.</p>
+                        </div>
+                        {hasIllustrativeFinancing ? <Badge variant="warning">Financing assumptions included</Badge> : <Badge variant="outline">Saved financing inputs</Badge>}
+                    </div>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-md border border-border bg-background p-3 flex flex-col justify-between">
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                                <p className="text-xs text-muted-foreground font-medium">Debt funding</p>
+                                <DataOriginBadge
+                                    origin="calculated"
+                                    label="Debt %"
+                                    metricLabel="Debt funding %"
+                                    metricValue={uses > 0 ? `${((seniorDebt / uses) * 100).toFixed(0)}%` : '—'}
+                                    formula="senior debt ÷ total uses"
+                                    description="Percentage of total acquisition uses funded by senior loan debt."
+                                    compact
+                                />
+                            </div>
+                            <p className="mt-1 text-lg font-bold text-foreground">{uses > 0 ? `${((seniorDebt / uses) * 100).toFixed(0)}%` : '—'}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">senior debt ÷ total uses</p>
+                        </div>
+                        <div className="rounded-md border border-border bg-background p-3 flex flex-col justify-between">
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                                <p className="text-xs text-muted-foreground font-medium">Debt / EBITDA</p>
+                                <DataOriginBadge
+                                    origin="calculated"
+                                    label={ebitda !== null ? "Calculated (Verified EBITDA)" : "Needs EBITDA"}
+                                    metricLabel="Debt / EBITDA Leverage"
+                                    metricValue={leverage === null ? 'Needs EBITDA' : `${leverage.toFixed(1)}x`}
+                                    formula="senior debt ÷ confirmed EBITDA/SDE"
+                                    description="Senior debt multiple relative to historical earnings. Most commercial lenders cap small acquisitions at 3.0x to 4.5x."
+                                    compact
+                                />
+                            </div>
+                            <p className="mt-1 text-lg font-bold text-foreground">{leverage === null ? 'Needs EBITDA' : `${leverage.toFixed(1)}x`}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">senior debt ÷ confirmed EBITDA/SDE</p>
+                        </div>
+                        <div className="rounded-md border border-border bg-background p-3 flex flex-col justify-between">
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                                <p className="text-xs text-muted-foreground font-medium">Debt-service coverage</p>
+                                <DataOriginBadge
+                                    origin="calculated"
+                                    label="Coverage Ratio"
+                                    metricLabel="Debt-service coverage (DSCR)"
+                                    metricValue={dscr === null ? 'Needs EBITDA' : `${dscr.toFixed(2)}x`}
+                                    formula="operating cash flow ÷ annual debt service"
+                                    description="Ratio of available operating cash flow to scheduled annual loan payments. Target is 1.25x or higher."
+                                    compact
+                                />
+                            </div>
+                            <p className="mt-1 text-lg font-bold text-foreground">{dscr === null ? 'Needs EBITDA' : `${dscr.toFixed(2)}x`}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">operating cash flow ÷ annual debt service</p>
+                        </div>
+                    </div>
+                    {dscr !== null && dscr < 1.25 ? <p className="mt-3 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">Downside resilience is thin: DSCR is below 1.25×. Consider lower leverage, more equity, a seller note, or revised terms.</p> : leverage !== null && leverage > 5 ? <p className="mt-3 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">Leverage is above 5.0× confirmed EBITDA/SDE. Review cash-flow downside and lender constraints before relying on this structure.</p> : null}
+                </div>
                 <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold">Starting assumptions</p><Badge variant={isIllustrativePreview ? 'warning' : 'secondary'}>{isIllustrativePreview ? 'Preview values' : 'Saved inputs'}</Badge></div><p className="mt-1 text-xs text-muted-foreground">You can still inspect the calculation even when some starting assumptions are missing; preview values are shown explicitly and should not be treated as confirmed deal terms.</p><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Purchase price</p><DataOriginBadge origin={savedPrice ? "user_entered" : "assumption"} compact /></div><p className="text-sm font-medium">{money(price)}</p></div><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Transaction fees</p><DataOriginBadge origin={model.transactionFees ? "user_entered" : "assumption"} compact /></div><p className="text-sm font-medium">{money(fees)}</p></div><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Working capital</p><DataOriginBadge origin={model.workingCapitalRequirement ? "user_entered" : "assumption"} compact /></div><p className="text-sm font-medium">{money(workingCapital)}</p></div><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Equity contribution</p><DataOriginBadge origin={model.equityContributionPercent ? "user_entered" : "benchmark"} compact /></div><p className="text-sm font-medium">{(equityPercent * 100).toFixed(0)}%</p></div><div><div className="flex items-center justify-between mb-0.5"><p className="text-xs text-muted-foreground">Seller note</p><DataOriginBadge origin={model.sellerNoteAmount ? "user_entered" : "assumption"} compact /></div><p className="text-sm font-medium">{money(sellerNote)}</p></div></div></div>
                 <div className="grid gap-4 xl:grid-cols-2"><MoneyBarChart title="Uses" description="Purchase price plus transaction fees and working-capital funding needs." data={usesData} /><MoneyBarChart title="Sources" description="Funding mix: senior debt, equity, and any seller note. Sources reconcile to uses." data={sourcesData} /></div>
                 {onOpenEvidence ? <button type="button" onClick={() => onOpenEvidence(capitalStackEvidence)} className="text-xs font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">How this was calculated</button> : null}

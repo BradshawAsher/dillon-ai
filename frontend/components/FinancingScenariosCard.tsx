@@ -7,6 +7,7 @@ import { computeAmortizingLoan, normalizePercentageFraction, resolveLoanTermYear
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import { Badge } from '../lib/shadcn/badge'
 import CardInfoPopover from './common/CardInfoPopover'
+import DataOriginBadge from './common/DataOriginBadge'
 
 type Props = {
     model: DealModel
@@ -92,31 +93,88 @@ export default function FinancingScenariosCard({ model }: Props) {
                             <div key={s.label} className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm font-semibold text-foreground">{s.label}</span>
-                                    <Badge variant="secondary" className="text-[10px]">{s.downPaymentPct}%</Badge>
+                                    <DataOriginBadge
+                                        origin="assumption"
+                                        label={`${s.downPaymentPct}% Down`}
+                                        metricLabel={`${s.label} Scenario`}
+                                        metricValue={`${money(s.downPayment)} equity`}
+                                        description={`Financing structure with ${s.downPaymentPct}% equity down payment and ${100 - s.downPaymentPct}% amortizing senior debt.`}
+                                        compact
+                                    />
                                 </div>
-                                <div className="space-y-1 text-xs">
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Down payment</span>
+                                <div className="space-y-1.5 text-xs">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-muted-foreground">Down payment</span>
+                                            <DataOriginBadge
+                                                origin="calculated"
+                                                metricLabel={`Down Payment (${s.label})`}
+                                                metricValue={money(s.downPayment)}
+                                                formula={`Purchase Price × ${s.downPaymentPct}%`}
+                                                description="Cash equity check required from the buyer at closing."
+                                                compact
+                                            />
+                                        </div>
                                         <span className="font-medium text-foreground">{money(s.downPayment)}</span>
                                     </div>
                                     {s.loanAmount > 0 && (
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Annual debt service</span>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-muted-foreground">Annual debt service</span>
+                                                <DataOriginBadge
+                                                    origin="calculated"
+                                                    metricLabel={`Annual Debt Service (${s.label})`}
+                                                    metricValue={money(s.annualDebtService)}
+                                                    formula="Amortizing loan P&I payment"
+                                                    description="Total annual principal and interest payments owed to senior lenders."
+                                                    compact
+                                                />
+                                            </div>
                                             <span className="font-medium text-foreground">{money(s.annualDebtService)}</span>
                                         </div>
                                     )}
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Cash flow after debt</span>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-muted-foreground">Cash flow after debt</span>
+                                            <DataOriginBadge
+                                                origin="calculated"
+                                                metricLabel={`Cash Flow After Debt (${s.label})`}
+                                                metricValue={money(s.cashFlowAfterDebt)}
+                                                formula="Operating Cash Flow − Annual Debt Service"
+                                                description="Net annual cash generated after servicing senior debt and paying income taxes."
+                                                compact
+                                            />
+                                        </div>
                                         <span className={`font-medium ${s.cashFlowAfterDebt >= 0 ? 'text-foreground' : 'text-red-600'}`}>{money(s.cashFlowAfterDebt)}</span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Cash-on-cash return</span>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-muted-foreground">Cash-on-cash return</span>
+                                            <DataOriginBadge
+                                                origin="calculated"
+                                                metricLabel={`Cash-on-Cash Return (${s.label})`}
+                                                metricValue={`${s.cashOnCashReturn.toFixed(1)}%`}
+                                                formula="(Cash Flow After Debt ÷ Down Payment) × 100"
+                                                description="Annual pre-tax cash yield earned on initial equity invested."
+                                                compact
+                                            />
+                                        </div>
                                         <span className={`font-bold ${cocColor}`}>{s.cashOnCashReturn.toFixed(1)}%</span>
                                     </div>
                                 </div>
                                 <div className="pt-1">
                                     <div className="flex items-center justify-between mb-1">
-                                        <span className="text-[10px] text-muted-foreground">Payback</span>
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-[10px] text-muted-foreground">Payback</span>
+                                            <DataOriginBadge
+                                                origin="calculated"
+                                                metricLabel={`Payback Period (${s.label})`}
+                                                metricValue={isFinite(s.paybackYears) ? `${s.paybackYears.toFixed(1)} yrs` : 'N/A'}
+                                                formula="Down Payment ÷ Cash Flow After Debt"
+                                                description="Number of operating years required to recoup initial cash equity."
+                                                compact
+                                            />
+                                        </div>
                                         <span className="text-[10px] font-medium text-foreground">
                                             {isFinite(s.paybackYears) ? `${s.paybackYears.toFixed(1)} yrs` : 'N/A'}
                                         </span>
