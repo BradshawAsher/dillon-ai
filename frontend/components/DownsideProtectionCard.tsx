@@ -3,6 +3,7 @@ import { Umbrella } from 'lucide-react'
 
 import type { DealModel } from '../hooks/backend/diligence'
 import { parseDocumentedFacts } from '../utils/evidence'
+import { normalizePercentageFraction } from '../utils/dealMath'
 import { Card, CardContent, CardHeader, CardTitle } from '../lib/shadcn/card'
 import CardInfoPopover from './common/CardInfoPopover'
 
@@ -20,10 +21,14 @@ export default function DownsideProtectionCard({ model }: Props) {
     const data = useMemo(() => {
         const facts = parseDocumentedFacts(model.documentedFactsJson)
         const rawEbitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
-        const ebitda = rawEbitda && rawEbitda > 0 ? rawEbitda : 2_400_000
-        const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : 12_400_000
+        const ebitda = rawEbitda && rawEbitda > 0
+            ? rawEbitda
+            : typeof model.ebitda === 'number' && model.ebitda > 0 ? model.ebitda : null
+        const revenue = typeof facts.revenue?.value === 'number' && facts.revenue.value > 0 ? facts.revenue.value : null
         const rawPrice = model.purchasePrice ?? model.askingPrice
-        const price = rawPrice && rawPrice > 0 ? rawPrice : 5_000_000
+        const price = rawPrice && rawPrice > 0 ? rawPrice : null
+
+        if (ebitda === null || price === null) return null
 
         const protections: Protection[] = []
 
@@ -50,12 +55,15 @@ export default function DownsideProtectionCard({ model }: Props) {
             detail: leverage <= 2.5 ? `${leverage.toFixed(1)}x Debt/EBITDA — conservative` : leverage <= 4 ? `${leverage.toFixed(1)}x Debt/EBITDA — standard` : `${leverage.toFixed(1)}x Debt/EBITDA — aggressive`,
         })
 
-        const margin = revenue && revenue > 0 ? ebitda / revenue : (model.baseEbitdaMargin ?? 0.20)
-        protections.push({
-            label: 'Margin of safety in operations',
-            status: margin >= 0.25 ? 'active' : margin >= 0.15 ? 'partial' : 'none',
-            detail: margin >= 0.25 ? `${(margin * 100).toFixed(0)}% margin — room to absorb revenue dips` : margin >= 0.15 ? `${(margin * 100).toFixed(0)}% margin — limited buffer` : `${(margin * 100).toFixed(0)}% margin — vulnerable to any revenue decline`,
-        })
+        const savedMargin = normalizePercentageFraction(model.baseEbitdaMargin)
+        const margin = revenue !== null ? ebitda / revenue : savedMargin
+        if (margin !== null && margin <= 1) {
+            protections.push({
+                label: 'Margin of safety in operations',
+                status: margin >= 0.25 ? 'active' : margin >= 0.15 ? 'partial' : 'none',
+                detail: margin >= 0.25 ? `${(margin * 100).toFixed(0)}% margin — room to absorb revenue dips` : margin >= 0.15 ? `${(margin * 100).toFixed(0)}% margin — limited buffer` : `${(margin * 100).toFixed(0)}% margin — vulnerable to any revenue decline`,
+            })
+        }
 
         const wc = model.workingCapitalRequirement ?? 0
         protections.push({

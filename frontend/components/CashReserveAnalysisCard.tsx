@@ -22,12 +22,20 @@ export default function CashReserveAnalysisCard({ model }: Props) {
     const data = useMemo(() => {
         const facts = parseDocumentedFacts(model.documentedFactsJson)
         const rawEbitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
-        const ebitda = rawEbitda && rawEbitda > 0 ? rawEbitda : 2_400_000
-        const revenue = typeof facts.revenue?.value === 'number' ? facts.revenue.value : 12_400_000
+        const ebitda = rawEbitda && rawEbitda > 0
+            ? rawEbitda
+            : typeof model.ebitda === 'number' && model.ebitda > 0 ? model.ebitda : null
+        const rawRevenue = typeof facts.revenue?.value === 'number' && facts.revenue.value > 0
+            ? facts.revenue.value
+            : null
+        const margin = normalizePercentageFraction(model.baseEbitdaMargin)
+        const revenue = rawRevenue ?? (ebitda !== null && margin !== null && margin > 0 ? ebitda / margin : null)
         const rawPrice = model.purchasePrice ?? model.askingPrice
-        const price = rawPrice && rawPrice > 0 ? rawPrice : 5_000_000
+        const price = rawPrice && rawPrice > 0 ? rawPrice : null
 
-        const monthlyRevenue = (revenue ?? ebitda / (model.baseEbitdaMargin ?? 0.20)) / 12
+        if (ebitda === null || revenue === null || ebitda > revenue) return null
+
+        const monthlyRevenue = revenue / 12
         const monthlyOpex = monthlyRevenue - (ebitda / 12)
         const debt = model.seniorDebtAmount ?? 0
         const rate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
@@ -64,8 +72,7 @@ export default function CashReserveAnalysisCard({ model }: Props) {
 
         // maintenanceCapex is an absolute annual dollar amount everywhere in the
         // model; fall back to 2% of revenue only when it is not saved.
-        const revenueBase = revenue ?? ebitda / (model.baseEbitdaMargin ?? 0.20)
-        const capexReserve = model.maintenanceCapex ?? (revenueBase * 0.02)
+        const capexReserve = model.maintenanceCapex ?? (revenue * 0.02)
         reserves.push({
             label: 'Annual maintenance capex fund',
             amount: Math.round(capexReserve),
@@ -83,7 +90,7 @@ export default function CashReserveAnalysisCard({ model }: Props) {
 
         const totalRequired = reserves.filter(r => r.priority === 'critical').reduce((s, r) => s + r.amount, 0)
         const totalRecommended = reserves.reduce((s, r) => s + r.amount, 0)
-        const asPercentOfPrice = Math.round((totalRecommended / price) * 100)
+        const asPercentOfPrice = price === null ? null : Math.round((totalRecommended / price) * 100)
 
         return { reserves, totalRequired, totalRecommended, asPercentOfPrice, monthlyDebt: Math.round(monthlyDebt) }
     }, [model])
@@ -122,9 +129,11 @@ export default function CashReserveAnalysisCard({ model }: Props) {
                     </div>
                 </div>
 
-                <p className="text-[10px] text-center text-muted-foreground">
-                    Total recommended reserves = {data.asPercentOfPrice}% of purchase price
-                </p>
+                {data.asPercentOfPrice !== null && (
+                    <p className="text-[10px] text-center text-muted-foreground">
+                        Total recommended reserves = {data.asPercentOfPrice}% of purchase price
+                    </p>
+                )}
 
                 <div className="space-y-2">
                     {data.reserves.map((r, i) => (

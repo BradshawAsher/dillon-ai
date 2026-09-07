@@ -376,7 +376,7 @@ export function buildManualDealModel(formData: ManualDealFormData, projectId: st
         reported_ebitda: { value: formData.reportedEbitda, status: 'confirmed', raw_value: `$${formData.reportedEbitda.toLocaleString()}`, confidence: 1 },
         adjusted_ebitda: { value: adjustedEbitda, status: 'confirmed', raw_value: `$${adjustedEbitda.toLocaleString()}`, confidence: 1 },
         disallowed_add_backs: { value: formData.disallowedAddBacks, status: 'confirmed', raw_value: `$${formData.disallowedAddBacks.toLocaleString()}`, confidence: 1 },
-        gross_margin: { value: formData.grossMarginPercent, status: 'confirmed', raw_value: `${formData.grossMarginPercent}%`, confidence: 1 },
+        gross_margin: { value: normalizePercentageFraction(formData.grossMarginPercent) ?? 0, status: 'confirmed', raw_value: `${formData.grossMarginPercent}%`, confidence: 1 },
         total_assets: { value: totalAssets, status: 'confirmed', raw_value: `$${totalAssets.toLocaleString()}`, confidence: 1 },
         total_liabilities: { value: totalLiabilities, status: 'confirmed', raw_value: `$${totalLiabilities.toLocaleString()}`, confidence: 1 },
         net_asset_value: { value: netAssetValue, status: 'confirmed', raw_value: `$${netAssetValue.toLocaleString()}`, confidence: 1 },

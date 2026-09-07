@@ -1,3 +1,28 @@
+# Financial Math Audit Follow-up (2026-09-06)
+
+## Verified root causes
+
+- Cash reserve, downside protection, and leverage safety still substitute old sample-company dollar values when required deal facts are absent. Those values feed ratios, scores, and recommendations without an illustration warning.
+- Manual questionnaire intake stores the documented `gross_margin.value` as a whole percent while the documented-fact contract and dashboard fixtures use a decimal fraction.
+- The live Pod 1 workflows still execute successfully, but n8n's workflow-detail endpoint cannot resolve their shared webhook Header Auth credential even though the credential-list endpoint and saved versions can see the same ID.
+
+## Targeted changes and verification
+
+1. Make the three cards fail closed when the facts needed for their calculations are absent; use a saved model EBITDA or margin only when explicitly present.
+2. Persist questionnaire gross margin in the documented-fact decimal convention while preserving the human-readable raw percent.
+3. Add server-rendered regression tests proving missing inputs cannot produce the former sample outputs, plus a unit assertion for the gross-margin contract.
+4. Run focused tests, TypeScript, the full unit and zero-token API suites, and the production build. Restore generated version metadata after building.
+5. Use version history as the inspection workaround for the credential-metadata error. Change only the reconciliation Code node when a captured successful execution proves the stored math result is wrong; validate, publish, and replay the captured inputs without another LLM call.
+
+### Live reconciliation correction discovered during execution review
+
+- Execution `70396` completed the v3 reconciliation node with 21 confirmed FY2023–FY2025 facts, but every fact omitted `currency`. The node's comparator required a nonempty currency on both sides, so it emitted no metrics and `not_available` despite matching periods.
+- Update only `Calculate Financial Reconciliations`: allow two same-document facts to compare when their normalized periods match and both currencies are unstated, emit a `CURRENCY_UNSPECIFIED` warning, and prefer the most recent comparable period. Keep one-sided or conflicting currencies non-comparable.
+- Validate the Code node locally with a zero-token synthetic fixture, update and publish through n8n MCP, then verify the saved version and the active published version. A future real document/reprocess remains the final end-to-end extraction check.
+- Replay against execution `70396` exposed an accounting-basis false positive: its operating expenses are explicitly before D&A, so gross profit minus those expenses equals EBITDA rather than operating income. Reconciliation v5 detects that explicit label, verifies the subtotal against stated EBITDA, and does not manufacture an operating-income mismatch.
+
+---
+
 # Dependency Security Cleanup (2026-08-27)
 
 ## Verified Root Causes

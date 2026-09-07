@@ -130,6 +130,8 @@ describe('manualDealIntake utilities', () => {
             const facts = JSON.parse(model.documentedFactsJson)
             expect(facts.companyName).toBe('Apex Precision Dynamics')
             expect(facts.intakeSource).toBe('manual_questionnaire')
+            expect(facts.gross_margin.value).toBe(0.42)
+            expect(facts.gross_margin.raw_value).toBe('42%')
         })
 
         it('does not leak NaN into price/revenue-scaled fields when inputs are blank', () => {

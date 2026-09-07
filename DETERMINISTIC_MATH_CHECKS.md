@@ -41,7 +41,7 @@ The live n8n workflow is **[Pod 1] - Financial DD Agent - Robust Per Document AI
 }
 ```
 
-Only confirmed facts with finite normalized values enter reconciliation. Identity comparisons also require matching, non-empty periods and currencies.
+Only confirmed facts with finite normalized values enter reconciliation. Identity comparisons require matching, non-empty periods. Matching currencies are required when either fact supplies one; when both currency fields are absent within the same document, the arithmetic may run but the result carries a `CURRENCY_UNSPECIFIED` warning rather than silently claiming fully specified units. When a document contains several comparable fiscal years, the per-document summary uses the most recent year, including labels such as `FY2025`.
 
 ## Supported checks and calculations
 
@@ -50,7 +50,8 @@ Only confirmed facts with finite normalized values enter reconciliation. Identit
 | Stored key | Identity | Requirements |
 |---|---|---|
 | `gross_profit_check` | Revenue − COGS = stated Gross Profit | Revenue, COGS, and stated Gross Profit for the same period/currency |
-| `operating_income_check` | Gross Profit − Operating Expenses = stated Operating Income | All three facts for the same period/currency |
+| `operating_income_check` | Gross Profit − Operating Expenses = stated Operating Income | Expenses must include depreciation/amortization; all three facts must share the same period/currency |
+| `ebitda_check` | Gross Profit − Operating Expenses before D&A = stated EBITDA | Expense labeling must explicitly say before/excluding D&A; all three facts must share the same period/currency |
 | `balance_sheet_check` | Total Assets = Total Liabilities + stated Equity | All three facts for the same period/currency |
 | `working_capital_check` | Current Assets − Current Liabilities = stated Working Capital | All three facts for the same period/currency |
 
@@ -87,6 +88,8 @@ The workflow also records warnings for:
 - A raw value and normalized value differing by 100× or more.
 - Same-metric facts within one document differing by 100× or more for the same period/currency.
 - Missing period or currency alignment between facts needed by a formula.
+- Currency omitted on both sides of an otherwise same-period, same-document identity; the calculation is retained with a warning.
+- Operating expenses explicitly reported before/excluding D&A; the workflow checks the subtotal against EBITDA rather than falsely comparing it with operating income.
 - EBITDA margin above 100% or below −50%. This is a sanity warning, not an identity check.
 
 ## Code locations

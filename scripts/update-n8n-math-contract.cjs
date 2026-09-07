@@ -94,9 +94,26 @@ const byMetric = Object.fromEntries(metricsList.map((metric) => [metric, support
 const warnings = [];
 const number = (fact) => Number(fact.normalized_value);
 const warning = (value) => { if (!warnings.includes(value)) warnings.push(value); };
-const comparable = (a, b) => String(a.period || '').trim() && String(a.period || '').trim().toLowerCase() === String(b.period || '').trim().toLowerCase() && String(a.currency || '').trim() && String(a.currency || '').trim().toUpperCase() === String(b.currency || '').trim().toUpperCase();
+const periodKey = (fact) => String(fact?.period || '').trim().toLowerCase();
+const currencyKey = (fact) => String(fact?.currency || '').trim().toUpperCase();
+const periodRank = (fact) => Number(periodKey(fact).match(/(?:19|20)\d{2}/)?.[0] || 0);
+const comparable = (a, b) => {
+  const periodA = periodKey(a);
+  const periodB = periodKey(b);
+  if (!periodA || periodA !== periodB) return false;
+  const currencyA = currencyKey(a);
+  const currencyB = currencyKey(b);
+  return currencyA && currencyB ? currencyA === currencyB : !currencyA && !currencyB;
+};
 const pair = (first, second) => {
-  for (const a of byMetric[first] || []) for (const b of byMetric[second] || []) if (comparable(a, b)) return [a, b];
+  const matches = [];
+  for (const a of byMetric[first] || []) for (const b of byMetric[second] || []) if (comparable(a, b)) matches.push([a, b]);
+  matches.sort((left, right) => periodRank(right[0]) - periodRank(left[0]));
+  if (matches.length) {
+    const selected = matches[0];
+    if (!currencyKey(selected[0]) && !currencyKey(selected[1])) warning('CURRENCY_UNSPECIFIED:' + first + ':' + second + ':' + periodKey(selected[0]));
+    return selected;
+  }
   if ((byMetric[first] || []).length && (byMetric[second] || []).length) warning('PERIOD_OR_CURRENCY_MISMATCH:' + first + ':' + second);
   return null;
 };
@@ -110,11 +127,14 @@ const check = (label, actual, expected, formula, inputs, period, currency) => {
 const rawExpectedValue = (raw) => {
   const text = String(raw ?? '').toLowerCase().replace(/,/g, '');
   if (/%/.test(text)) return null;
-  const match = text.match(/([-+]?\d*\.?\d+)\s*([kmb])?\b/);
+  const match = text.match(/([-+]?\d*\.?\d+)\s*(thousand|million|billion|[kmb])?\b/);
   if (!match) return null;
-  const multiplier = match[2] === 'k' ? 1e3 : match[2] === 'm' ? 1e6 : match[2] === 'b' ? 1e9 : 1;
+  const suffix = match[2] || '';
+  const multiplier = suffix === 'k' || suffix === 'thousand' ? 1e3 : suffix === 'm' || suffix === 'million' ? 1e6 : suffix === 'b' || suffix === 'billion' ? 1e9 : 1;
   return Number(match[1]) * multiplier;
 };
+const factContext = (fact) => JSON.stringify({ raw_value: fact?.raw_value, citation: fact?.citation, description: fact?.description }).toLowerCase();
+const explicitlyBeforeDa = (fact) => /before\s*(?:d\s*&\s*a|d\s*and\s*a|depreciation|amortization)|exclud(?:e[sd]?|ing).*?(?:depreciation|amortization)/.test(factContext(fact));
 for (const fact of supported) {
   const expected = rawExpectedValue(fact.raw_value);
   const actual = number(fact);
@@ -151,9 +171,16 @@ const grossProfitExpenses = pair('gross_profit', 'operating_expenses');
 if (grossProfitExpenses) {
   const [grossProfit, expenses] = grossProfitExpenses;
   const calculated = number(grossProfit) - number(expenses);
-  metrics.operating_income_calculated = { value: calculated, formula: 'gross_profit - operating_expenses', period: grossProfit.period, currency: grossProfit.currency, inputs: { gross_profit: number(grossProfit), operating_expenses: number(expenses) } };
-  const reported = byMetric.operating_income.find((fact) => comparable(fact, grossProfit));
-  if (reported) metrics.operating_income_check = check('operating_income', number(reported), calculated, 'gross_profit - operating_expenses = operating_income', { gross_profit: number(grossProfit), operating_expenses: number(expenses), reported_operating_income: number(reported) }, grossProfit.period, grossProfit.currency);
+  if (explicitlyBeforeDa(expenses)) {
+    metrics.ebitda_calculated = { value: calculated, formula: 'gross_profit - operating_expenses_before_da', period: grossProfit.period, currency: grossProfit.currency, inputs: { gross_profit: number(grossProfit), operating_expenses_before_da: number(expenses) } };
+    const reportedEbitda = byMetric.ebitda_sde.find((fact) => comparable(fact, grossProfit));
+    if (reportedEbitda) metrics.ebitda_check = check('ebitda', number(reportedEbitda), calculated, 'gross_profit - operating_expenses_before_da = ebitda', { gross_profit: number(grossProfit), operating_expenses_before_da: number(expenses), reported_ebitda: number(reportedEbitda) }, grossProfit.period, grossProfit.currency);
+    warning('OPERATING_EXPENSES_BEFORE_DA:' + periodKey(expenses));
+  } else {
+    metrics.operating_income_calculated = { value: calculated, formula: 'gross_profit - operating_expenses', period: grossProfit.period, currency: grossProfit.currency, inputs: { gross_profit: number(grossProfit), operating_expenses: number(expenses) } };
+    const reported = byMetric.operating_income.find((fact) => comparable(fact, grossProfit));
+    if (reported) metrics.operating_income_check = check('operating_income', number(reported), calculated, 'gross_profit - operating_expenses = operating_income', { gross_profit: number(grossProfit), operating_expenses: number(expenses), reported_operating_income: number(reported) }, grossProfit.period, grossProfit.currency);
+  }
 }
 const revenueEbitda = pair('revenue', 'ebitda_sde');
 if (revenueEbitda && number(revenueEbitda[0]) !== 0) {
@@ -165,8 +192,8 @@ if (revenueEbitda && number(revenueEbitda[0]) !== 0) {
 const employee = output.employee_evidence;
 const revenueForEmployee = byMetric.revenue.find((fact) => {
   if (!employee || employee.status !== 'confirmed' || !Number.isFinite(Number(employee.count)) || Number(employee.count) === 0) return false;
-  const factYear = String(fact.period || '').match(/\b(19|20)\d{2}\b/)?.[0];
-  const employeeYear = String(employee.as_of_date || '').match(/\b(19|20)\d{2}\b/)?.[0];
+  const factYear = String(fact.period || '').match(/(19|20)\d{2}/)?.[0];
+  const employeeYear = String(employee.as_of_date || '').match(/(19|20)\d{2}/)?.[0];
   return factYear && employeeYear && factYear === employeeYear;
 });
 if (revenueForEmployee) metrics.revenue_per_employee = { value: number(revenueForEmployee) / Number(employee.count), formula: 'revenue / employee_count', period: revenueForEmployee.period, currency: revenueForEmployee.currency, inputs: { revenue: number(revenueForEmployee), employee_count: Number(employee.count) } };
@@ -202,8 +229,8 @@ if (cashFlowDebtService && number(cashFlowDebtService[1]) !== 0) {
   const [cashFlow, debtService] = cashFlowDebtService;
   metrics.dscr = { value: number(cashFlow) / number(debtService), formula: 'free_cash_flow / annual_debt_service', period: cashFlow.period, currency: cashFlow.currency, inputs: { free_cash_flow: number(cashFlow), annual_debt_service: number(debtService) } };
 }
-const seriousWarnings = warnings.filter((item) => /SCALE_MISMATCH|CONFLICTING_FACT_SCALE|IMPLAUSIBLE_EBITDA_MARGIN|RECONCILIATION_MISMATCH/.test(item));
-const reconciliation = { version: 3, status: seriousWarnings.length ? 'warning' : Object.keys(metrics).length ? 'passed' : 'not_available', warnings, seriousWarnings, metrics, factCount: supported.length };
+const seriousWarnings = warnings.filter((item) => /SCALE_MISMATCH|CONFLICTING_FACT_SCALE|IMPLAUSIBLE_EBITDA_MARGIN|RECONCILIATION_MISMATCH|CURRENCY_UNSPECIFIED/.test(item));
+const reconciliation = { version: 5, status: seriousWarnings.length ? 'warning' : Object.keys(metrics).length ? 'passed' : 'not_available', warnings, seriousWarnings, metrics, factCount: supported.length };
 return { json: { ...$json, ...output, output: ($json.output || output), financialFacts: supported, reconciliation }, binary: $binary };`
 
 function patchParser(node) {
@@ -268,7 +295,7 @@ async function main() {
   // $binary) resolve only at runtime, so syntax validation uses Function.
   new Function(reconciliationCode)
 
-  console.log(`Validated 2 parser schemas, managed/BYOK prompts, and reconciliation v3. Backup: ${backupPath}`)
+  console.log(`Validated 2 parser schemas, managed/BYOK prompts, and reconciliation v5. Backup: ${backupPath}`)
   if (DRY_RUN) {
     console.log('Dry run complete; no workflow was changed.')
     return
@@ -288,7 +315,7 @@ async function main() {
   const verifiedParsers = parserNames.map((name) => JSON.parse(verified.nodes.find((node) => node.name === name).parameters.inputSchema))
   const verifiedCode = verified.nodes.find((node) => node.name === 'Calculate Financial Reconciliations').parameters.jsCode
   const contractIsLive = verifiedParsers.every((schema) => schema.properties.financial_facts.items.properties.normalized_value)
-    && verifiedCode.includes('version: 3')
+    && verifiedCode.includes('version: 5')
     && verifiedCode.includes('working_capital_check')
     && verifiedCode.includes('debt_to_ebitda')
     && verifiedCode.includes('metrics.dscr')
@@ -296,7 +323,11 @@ async function main() {
   console.log(`Live verification passed. active=${verified.active} updatedAt=${verified.updatedAt} versionId=${verified.versionId}`)
 }
 
-main().catch((error) => {
-  console.error(error.message)
-  process.exitCode = 1
-})
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error.message)
+    process.exitCode = 1
+  })
+}
+
+module.exports = { reconciliationCode }

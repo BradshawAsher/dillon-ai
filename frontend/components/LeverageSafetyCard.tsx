@@ -27,13 +27,17 @@ export default function LeverageSafetyCard({ model }: Props) {
     const data = useMemo(() => {
         const facts = parseDocumentedFacts(model.documentedFactsJson)
         const rawEbitda = typeof facts.ebitda_sde?.value === 'number' ? facts.ebitda_sde.value : null
-        const ebitda = rawEbitda && rawEbitda > 0 ? rawEbitda : 2_400_000
+        const ebitda = rawEbitda && rawEbitda > 0
+            ? rawEbitda
+            : typeof model.ebitda === 'number' && model.ebitda > 0 ? model.ebitda : null
 
         const rawDebt = model.seniorDebtAmount ?? 0
         const rawSellerNote = model.sellerNoteAmount ?? 0
-        const debt = rawDebt > 0 ? rawDebt : (rawDebt + rawSellerNote > 0 ? rawDebt : 2_500_000)
-        const sellerNote = rawSellerNote > 0 ? rawSellerNote : (rawDebt + rawSellerNote > 0 ? 0 : 750_000)
+        const debt = Math.max(0, rawDebt)
+        const sellerNote = Math.max(0, rawSellerNote)
         const totalDebt = debt + sellerNote
+
+        if (ebitda === null || totalDebt <= 0) return null
 
         const baseRate = normalizePercentageFraction(model.interestRate) ?? DEAL_MATH_DEFAULTS.interestRate
         const term = resolveLoanTermYears(model.amortizationYears, model.loanTermYears)
