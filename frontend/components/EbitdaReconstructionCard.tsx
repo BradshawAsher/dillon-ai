@@ -125,17 +125,11 @@ export default function EbitdaReconstructionCard({ model, onOpenEvidence }: { mo
     const adjustedEbitda = ebitda !== null ? ebitda + netAdjustment : null
     const askingPrice = model.askingPrice ?? model.purchasePrice ?? null
 
-    // Non-positive revenue makes every margin below undefined: line 127 already
-    // guards `revenue > 0`, but `margin` did not, so a confirmed revenue of 0
-    // rendered "Infinity% margin" and a bogus "unusually high" warning. An
-    // EBITDA-from-revenue reconstruction is meaningless without positive
-    // revenue, so hide the card as we do for a missing value.
-    if (revenue === null || revenue <= 0 || ebitda === null) return null
-
-    const margin = ebitda / revenue
-    const adjustedMargin = adjustedEbitda && revenue > 0 ? adjustedEbitda / revenue : margin
-    const opex = revenue - ebitda
+    // Keep hooks unconditional as facts arrive or the selected project changes.
+    // Unavailable or non-positive revenue must not enter margin calculations.
     const lines: LineItem[] = useMemo(() => {
+        if (revenue === null || revenue <= 0 || ebitda === null) return []
+        const opex = revenue - ebitda
         const list: LineItem[] = [
             { label: 'Revenue', value: revenue, source: 'documented' },
             { label: 'Less: Operating expenses (implied)', value: -opex, source: 'calculated', note: 'Revenue minus EBITDA/SDE' },
@@ -180,7 +174,7 @@ export default function EbitdaReconstructionCard({ model, onOpenEvidence }: { mo
             })
         }
         return list
-    }, [revenue, opex, ebitda, facts, adjustments, adjustedEbitda])
+    }, [revenue, ebitda, facts, adjustments, adjustedEbitda])
 
     const waterfallData = useMemo(() => {
         return lines.filter(l => l.label !== 'Pro-Forma Adjusted EBITDA').map((line): WaterfallDatum => ({
@@ -190,6 +184,10 @@ export default function EbitdaReconstructionCard({ model, onOpenEvidence }: { mo
         }))
     }, [lines])
 
+    if (revenue === null || revenue <= 0 || ebitda === null) return null
+
+    const margin = ebitda / revenue
+    const adjustedMargin = adjustedEbitda && revenue > 0 ? adjustedEbitda / revenue : margin
     const warnings: string[] = []
     if (margin > 0.6) warnings.push(`Documented margin is ${pct(margin)} — unusually high, verify add-backs`)
     if (margin < 0.05) warnings.push(`Documented margin is ${pct(margin)} — very thin, check for missing line items`)

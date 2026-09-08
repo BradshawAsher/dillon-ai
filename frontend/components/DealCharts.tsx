@@ -231,8 +231,6 @@ export function EbitdaLineChart({ data }: { data: ChartDatum[] }) {
 export type WaterfallDatum = { label: string; value: number; type: 'positive' | 'negative' | 'total' }
 
 export function WaterfallChart({ title, description, data }: { title: string; description: string; data: WaterfallDatum[] }) {
-    if (!data.length) return null
-
     const computedData = useMemo(() => {
         let running = 0
         return data.map((item) => {
@@ -252,6 +250,8 @@ export function WaterfallChart({ title, description, data }: { title: string; de
             }
         })
     }, [data])
+
+    if (!data.length) return null
 
     return (
         <div className="rounded-xl border border-border bg-muted/20 p-4">
