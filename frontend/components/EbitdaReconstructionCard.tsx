@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../li
 import { parseDocumentedFacts, type EvidenceItem } from '../utils/evidence'
 import { WaterfallChart, type WaterfallDatum } from './DealCharts'
 import CardInfoPopover from './common/CardInfoPopover'
+import { generateId } from '../utils/generateId'
 
 function money(value: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
@@ -83,7 +84,7 @@ export default function EbitdaReconstructionCard({ model, onOpenEvidence }: { mo
         if (!newName.trim() || isNaN(parsedAmount) || parsedAmount <= 0) return
 
         const newItem: AnalystAdjustment = {
-            id: `adj_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            id: generateId('adj'),
             name: newName.trim(),
             amount: parsedAmount,
             type: newType,
@@ -106,7 +107,7 @@ export default function EbitdaReconstructionCard({ model, onOpenEvidence }: { mo
     // Quick presets
     const handleAddPreset = (name: string, amount: number, type: 'add' | 'deduct', category: AnalystAdjustment['category']) => {
         const newItem: AnalystAdjustment = {
-            id: `adj_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            id: generateId('adj'),
             name,
             amount,
             type,
