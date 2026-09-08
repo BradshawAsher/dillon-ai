@@ -316,12 +316,14 @@ export default function EbitdaReconstructionCard({ model, onOpenEvidence }: { mo
                     <form onSubmit={handleAddAdjustment} className="grid gap-2 sm:grid-cols-12 items-center">
                         <input
                             type="text"
+                            aria-label="Adjustment description"
                             placeholder="Adjustment description (e.g. Discontinued product line)"
                             value={newName}
                             onChange={e => setNewName(e.target.value)}
                             className="sm:col-span-5 h-8 rounded-md border border-input bg-background px-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                         <select
+                            aria-label="Adjustment type"
                             value={newType}
                             onChange={e => setNewType(e.target.value as 'add' | 'deduct')}
                             className="sm:col-span-2 h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
@@ -331,6 +333,7 @@ export default function EbitdaReconstructionCard({ model, onOpenEvidence }: { mo
                         </select>
                         <input
                             type="text"
+                            aria-label="Adjustment amount in dollars"
                             placeholder="$ Amount (e.g. 25000)"
                             value={newAmount}
                             onChange={e => setNewAmount(e.target.value)}

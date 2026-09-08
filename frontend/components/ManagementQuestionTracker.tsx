@@ -143,8 +143,9 @@ export default function ManagementQuestionTracker({ projectId, suggestedQuestion
                                 </Button>
                             </div>
                             <div className="grid gap-2 sm:grid-cols-3">
-                                <Input value={item.owner} onChange={(event) => update(item.id, { owner: event.target.value })} placeholder="Owner" />
+                                <Input aria-label="Question owner" value={item.owner} onChange={(event) => update(item.id, { owner: event.target.value })} placeholder="Owner" />
                                 <select
+                                    aria-label="Question priority"
                                     value={item.priority}
                                     onChange={(event) => update(item.id, { priority: event.target.value as Question['priority'] })}
                                     className="h-9 rounded-md border border-input bg-background px-3 text-sm"
@@ -154,6 +155,7 @@ export default function ManagementQuestionTracker({ projectId, suggestedQuestion
                                     <option>Low</option>
                                 </select>
                                 <select
+                                    aria-label="Question status"
                                     value={item.status}
                                     onChange={(event) => update(item.id, { status: event.target.value as Question['status'] })}
                                     className="h-9 rounded-md border border-input bg-background px-3 text-sm"
