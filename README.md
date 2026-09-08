@@ -4,7 +4,7 @@
 
 ## Dual Core Agent Capabilities
 
-The Financial Due Diligence Agent automates two core M&A workflow stages (see [`PURPOSE.md`](PURPOSE.md) and [`LOI_DEPENDENCIES.md`](LOI_DEPENDENCIES.md) for full breakdown):
+The Financial Due Diligence Agent automates two core M&A workflow stages (see [`PURPOSE.md`](PURPOSE.md) and [`LOI_DEPENDENCIES.md`](docs/LOI_DEPENDENCIES.md) for full breakdown):
 
 1. **Phase 1: Pre-LOI Valuation Discovery & Normalized EBITDA Extraction**
    - Extracts revenue, gross profit, and reported EBITDA from raw financial statements (P&L, Trial Balance, Tax Returns).
@@ -28,15 +28,16 @@ MergeWorks supports three complementary diligence depth levels depending on tran
 
 ## Key Documentation Links
 
+- **[Senior Engineering Interview Masterclass (`INTERVIEW_QUESTIONS.md`)](INTERVIEW_QUESTIONS.md)** — Architectural talking points, system design trade-offs, and behavioral framing covering 500-concurrency load testing, Cloudflare 524 edge timeout resilience, zero hallucinations, data lineage, and zero-buffer streaming.
+- **[Data Lineage & Verification Tiers Guide (`docs/DATA_LINEAGE_AND_VERIFICATION_TIERS.md`)](docs/DATA_LINEAGE_AND_VERIFICATION_TIERS.md)** — 4-tier verification hierarchy (Confirmed, Verified, Reconciled, Calculated), interactive `DataOriginBadge` formula popovers, and citation trails.
 - **[Web Search Status, Setup & Pricing](docs/WEB_SEARCH_SETUP.md)** — Live web search is not yet available; compares Brave, OpenAI, and Tavily and explains future hosted/BYOK integration.
-
 - **[System Architecture & Technical Specification (`ARCHITECTURE.md`)](ARCHITECTURE.md)** — Comprehensive architecture diagrams, data flow sequence charts, component deep-dives, and interview masterclass talking points.
 - **[Concurrency, Capacity & Stress Benchmarks (`CAPACITY_LIMITS.md`)](test_sets/stress_reports/CAPACITY_LIMITS.md)** — Empirical 4-tier concurrency matrix (500 connections @ 1.18s P95, 445 RPS DB throughput), Little's Law think-time proofs, and LLM worker capacity (15–25 concurrent documents / ~3–4 simultaneous active batches on a single key, with linear BYOK scaling).
 - **[Upload and Batch Recovery](docs/UPLOAD_AND_BATCH_RECOVERY.md)** — Resumable large-file uploads, verified n8n handoff, failure recovery, and batch count/timer rules.
 - **[Evaluation Harness & Benchmark Guide (`EVALS.md`)](EVALS.md)** — 30 data rooms, 78 scored benchmark documents (357 total files), 8-dimension scoring rubric, and 1-card Pre/Post-LOI toggle design.
 - **[Mathematical Calculations & Formulas (`MATH_CALCULATIONS.md`)](MATH_CALCULATIONS.md)** — Deterministic financial arithmetic, evaluation scoring mechanics, and negotiation formulas.
 - **[Dual Core Agent Capabilities (`PURPOSE.md`)](PURPOSE.md)** — Pre-LOI Valuation Discovery & Post-LOI Deal Negotiation frameworks.
-- **[Deterministic Math Verification (`DETERMINISTIC_MATH_CHECKS.md`)](DETERMINISTIC_MATH_CHECKS.md)** — Code-based arithmetic reconciliation over extracted source facts.
+- **[Deterministic Math Verification (`DETERMINISTIC_MATH_CHECKS.md`)](docs/DETERMINISTIC_MATH_CHECKS.md)** — Code-based arithmetic reconciliation over extracted source facts.
 
 ## Distributed Multi-Agent Architecture & Data Flow
 
@@ -258,26 +259,30 @@ batch progress, and project synthesis before promoting a change. See
 ## Key UI features
 
 - **Multi-Modal VDR Ingestion Dropzone** — Ingests 9 asset classes (PDF, XLSX, DOCX, EML, WEBP, PPTX, MP3, MP4, and client-side unpacked ZIP archives) with direct presigned cloud uploads.
+- **Interactive Data Lineage & Verification Tiers (`DataOriginBadge`)** — Every financial metric displays an interactive origin badge denoting verification level (Tier 1 Document Confirmed, Tier 2 Multi-Doc Concordance, Tier 3 Deterministic Reconciled, Tier 4 Underwriting Calculated), click-to-formula popovers, and page-level source citations.
+- **AI Deal Copilot with Voice Dictation** (floating panel) — Context-aware Q&A about active and portfolio deals with hands-free browser Web Speech API dictation (`webkitSpeechRecognition`), local microsecond financial tools, and card anchor deep-linking.
 - **Interactive Evals & Harness Tab** — 1-Card per deal with real-time `Pre-LOI Discovery` ↔ `Post-LOI Negotiation` toggle, 78 scored benchmark documents across 30 full data rooms (357 total files), and per-document precision inspection.
 - **Guided Walkthrough & Simulated VDR Modal** — macOS-style interactive VDR file explorer, step-by-step feature tours, and mission quests.
 - **Overview tab** with Summary / Deep Analysis sub-tabs — Deal Memo shown first.
-- **AI Chatbot** (floating panel) — context-aware Q&A about the active project and all other projects in the portfolio.
-- **Deterministic math checks** — pure arithmetic cross-verification of extracted financials (see [DETERMINISTIC_MATH_CHECKS.md](DETERMINISTIC_MATH_CHECKS.md)).
-- **Deal Grade** — letter grade (A–F) across pricing, profitability, risk, data quality, payback.
-- **Quick Valuation & Bridge** — back-of-napkin valuation ranges with price markers, seller add-back adjustments, and escrow recommendations.
+- **Deterministic math checks** — Pure arithmetic cross-verification of extracted financials (see [DETERMINISTIC_MATH_CHECKS.md](docs/DETERMINISTIC_MATH_CHECKS.md)).
+- **Deal Grade** — Letter grade (A–F) across pricing, profitability, risk, data quality, payback.
+- **Quick Valuation & Bridge** — Back-of-napkin valuation ranges with price markers, seller add-back adjustments, and escrow recommendations.
 - **Radar Chart** — 5-dimension SVG spider chart (no Recharts dependency).
 - **Risk Matrix** — 2×2 likelihood × impact grid with cross-document contradiction detection.
-- **Confidence Meter** — circular gauge across 4 dimensions.
-- **Seller Questions / DD Request List / Email Draft** — auto-generated from deal state.
-- **Project Portfolio** — per-project "Add documents" button and synthesis download.
+- **Confidence Meter** — Circular gauge across 4 dimensions.
+- **Seller Questions / DD Request List / Email Draft** — Auto-generated from deal state.
+- **Project Portfolio** — Per-project "Add documents" button and synthesis download.
 - **Keyboard shortcuts** — Cmd/Ctrl+K command palette, C for chat, Escape to close panels.
-- **Resilient analysis modules** — 40+ analysis cards are lazy-loaded and wrapped in per-section error boundaries (`SafeSuspense`), so a single card failing degrades locally without breaking the dashboard.
+- **Resilient analysis modules** — 40+ analysis cards are lazy-loaded and wrapped in per-section error boundaries (`SafeSuspense`), zero-division guards (`safeDiv`), and React Error #185 re-render prevention.
+- **Asynchronous 524 Timeout Resilience** — Decoupled async dispatch via n8n and Supabase Realtime CDC ensures long extractions never trigger Cloudflare 524 Gateway Timeouts.
 
 ## Project map
 
 | Path | Role |
 | --- | --- |
 | `ARCHITECTURE.md` | **System architecture, end-to-end data flow diagrams & interview prep guide** |
+| `INTERVIEW_QUESTIONS.md` | **Senior engineering interview masterclass: 18 architectural questions & executive cheat sheet** |
+| `docs/DATA_LINEAGE_AND_VERIFICATION_TIERS.md` | **Data lineage taxonomy, 4-tier verification hierarchy & DataOriginBadge specifications** |
 | `frontend/pages/` and `frontend/components/` | React 19 interface |
 | `frontend/components/walkthrough/` | Interactive walkthrough tour engine & simulated VDR modal |
 | `frontend/hooks/backend/diligence.ts` | Live/mock query hooks used by the UI |
@@ -291,11 +296,11 @@ batch progress, and project synthesis before promoting a change. See
 | `docs/UPLOAD_AND_BATCH_RECOVERY.md` | Upload transport, batch state, recovery, and verification |
 | `docs/HOW_TO_RUN.md` | Additional operating notes |
 | `PURPOSE.md` | Dual core capabilities: Pre-LOI Discovery & Post-LOI Negotiation |
-| `DETERMINISTIC_MATH_CHECKS.md` | How deterministic math checks work |
-| `GROUND_TRUTH_METHODOLOGY.md` | Ground truth creation methodology, gold standard datasets & high-accuracy architecture |
+| `docs/DETERMINISTIC_MATH_CHECKS.md` | How deterministic math checks work |
+| `docs/GROUND_TRUTH_METHODOLOGY.md` | Ground truth creation methodology, gold standard datasets & high-accuracy architecture |
 | `EVALS.md` | Evaluation harness guide, 8-dimension scoring & CI/CD benchmark tests |
 | `MATH_CALCULATIONS.md` | Deterministic mathematical formulas, verification equations & unified calculation engine |
-| `EVAL_FAQ_AND_EDGE_CASES.md` | Evaluation edge-case handling & buyer defense FAQ |
+| `docs/EVAL_FAQ_AND_EDGE_CASES.md` | Evaluation edge-case handling & buyer defense FAQ |
 
 ## Production Stack & Zero-Egress Architecture
 
