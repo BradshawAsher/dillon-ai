@@ -236,7 +236,7 @@ export function computeCohortSummary(cohorts: CohortRow[]): CohortAnalysisSummar
     const avgM12Nrr = m12Nrrs.length > 0 ? Math.round(m12Nrrs.reduce((a, b) => a + b, 0) / m12Nrrs.length) : 108
     const churnFloor = allTerminalLogos.length > 0 ? Math.min(...allTerminalLogos) : 75
 
-    // Flag price hike masking churn when NRR is expanding (>= 100%) but logo retention is severely dropping (< 60%)
+    // Flag price hike masking churn when NRR is expanding (>= 100%) but logo retention is severely dropping (< 65%)
     const isPriceHikeMaskingChurn = avgM12Nrr >= 100 && avgM12Logo < 65
 
     let overallHealth: CohortHealthStatus = 'healthy'

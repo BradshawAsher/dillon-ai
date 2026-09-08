@@ -258,8 +258,9 @@ export default function AlertRulesCard({ synthesis }: { synthesis?: ProjectSynth
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="text-xs font-medium text-muted-foreground">Trigger</label>
+                                <label htmlFor="alert-new-trigger" className="text-xs font-medium text-muted-foreground">Trigger</label>
                                 <select
+                                    id="alert-new-trigger"
                                     value={newTrigger}
                                     onChange={e => setNewTrigger(e.target.value as AlertTrigger)}
                                     className="mt-1 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -270,8 +271,9 @@ export default function AlertRulesCard({ synthesis }: { synthesis?: ProjectSynth
                                 </select>
                             </div>
                             <div>
-                                <label className="text-xs font-medium text-muted-foreground">Channel</label>
+                                <label htmlFor="alert-new-channel" className="text-xs font-medium text-muted-foreground">Channel</label>
                                 <select
+                                    id="alert-new-channel"
                                     value={newChannel}
                                     onChange={e => setNewChannel(e.target.value as AlertChannel)}
                                     className="mt-1 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -282,8 +284,9 @@ export default function AlertRulesCard({ synthesis }: { synthesis?: ProjectSynth
                                 </select>
                             </div>
                             <div>
-                                <label className="text-xs font-medium text-muted-foreground">Severity</label>
+                                <label htmlFor="alert-new-severity" className="text-xs font-medium text-muted-foreground">Severity</label>
                                 <select
+                                    id="alert-new-severity"
                                     value={newSeverity}
                                     onChange={e => setNewSeverity(e.target.value as AlertRule['severity'])}
                                     className="mt-1 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -294,8 +297,9 @@ export default function AlertRulesCard({ synthesis }: { synthesis?: ProjectSynth
                                 </select>
                             </div>
                             <div>
-                                <label className="text-xs font-medium text-muted-foreground">Frequency</label>
+                                <label htmlFor="alert-new-frequency" className="text-xs font-medium text-muted-foreground">Frequency</label>
                                 <select
+                                    id="alert-new-frequency"
                                     value={newFrequency}
                                     onChange={e => setNewFrequency(e.target.value as AlertFrequency)}
                                     className="mt-1 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
