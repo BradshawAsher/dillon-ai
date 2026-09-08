@@ -1154,6 +1154,7 @@ export default function EvalDashboardTab({
 
                                 {/* Filter by Status */}
                                 <select
+                                    aria-label="Filter by status"
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value as any)}
                                     className="text-xs px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium"
@@ -1165,6 +1166,7 @@ export default function EvalDashboardTab({
 
                                 {/* Filter by Business */}
                                 <select
+                                    aria-label="Filter by business"
                                     value={businessFilter}
                                     onChange={(e) => setBusinessFilter(e.target.value)}
                                     className="text-xs px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium max-w-[200px] truncate"
@@ -1177,6 +1179,7 @@ export default function EvalDashboardTab({
 
                                 {/* Filter by Model */}
                                 <select
+                                    aria-label="Filter by model"
                                     value={modelFilter}
                                     onChange={(e) => setModelFilter(e.target.value)}
                                     className="text-xs px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium"
@@ -1189,6 +1192,7 @@ export default function EvalDashboardTab({
 
                                 {/* Sort By */}
                                 <select
+                                    aria-label="Sort results by"
                                     value={sortBy}
                                     onChange={(e) => setSortBy(e.target.value as any)}
                                     className="text-xs px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium"

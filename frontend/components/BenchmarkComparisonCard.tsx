@@ -175,6 +175,7 @@ export default function BenchmarkComparisonCard({ model, synthesis }: Props) {
                     <div className="flex items-center gap-2">
                         <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
                         <select
+                            aria-label="Benchmark sector"
                             value={selectedSectorKey}
                             onChange={(e) => setSelectedSectorKey(e.target.value)}
                             className="text-xs bg-background border border-border rounded-md px-2.5 py-1 text-foreground font-medium focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
