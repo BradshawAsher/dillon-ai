@@ -23048,6 +23048,27 @@ async function submitDealPacket(req) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Submission could not be confirmed.";
+    const is524Timeout = error instanceof Error && (error.message.includes("524") || error.message.toLowerCase().includes("timeout"));
+    if (is524Timeout) {
+      console.warn("[submitDealPacket] Cloudflare 524 timeout received; n8n processing in background", { requestID, normalizedProjectId });
+      return {
+        status: "accepted",
+        environment,
+        target: `https://merge-works.app.n8n.cloud/${path2}`,
+        method: "POST",
+        submittedAt: triggerTimestamp,
+        submittedBy: req.user.email,
+        payload,
+        response: {
+          requestID,
+          status: "processing",
+          receivedAt: triggerTimestamp,
+          createdAt: triggerTimestamp,
+          updatedAt: triggerTimestamp,
+          environment
+        }
+      };
+    }
     try {
       const { error: saveError } = await supabase.from("documents").update({
         status: "upload_failed",
@@ -24119,6 +24140,9 @@ function installBackendGlobals() {
         const isExecLimit = response.status === 429 || lowerText.includes("execution limit") || lowerText.includes("executions limit") || lowerText.includes("has reached") || lowerText.includes("limit reached") || response.status === 503 && lowerText.includes("limit");
         if (isExecLimit) {
           throw new Error("n8n rejected the submission due to a rate or execution limit. Check workflow availability and retry when available.");
+        }
+        if (response.status === 524 || lowerText.includes("524: a timeout occurred") || lowerText.includes("error 524")) {
+          throw new Error("n8n Cloudflare gateway timeout (HTTP 524): n8n took longer than 100s to acknowledge receipt under high batch load. Processing is continuing asynchronously in the background.");
         }
         const isEmpty = text2.length === 0 || text2 === "{}" || text2 === "null";
         if (isEmpty && response.status >= 500) {

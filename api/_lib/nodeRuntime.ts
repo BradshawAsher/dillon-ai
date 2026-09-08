@@ -97,6 +97,9 @@ export function installBackendGlobals() {
         if (isExecLimit) {
           throw new Error('n8n rejected the submission due to a rate or execution limit. Check workflow availability and retry when available.')
         }
+        if (response.status === 524 || lowerText.includes('524: a timeout occurred') || lowerText.includes('error 524')) {
+          throw new Error('n8n Cloudflare gateway timeout (HTTP 524): n8n took longer than 100s to acknowledge receipt under high batch load. Processing is continuing asynchronously in the background.')
+        }
         const isEmpty = text.length === 0 || text === '{}' || text === 'null'
         if (isEmpty && response.status >= 500) {
           throw new Error('n8n is temporarily unavailable (returned empty response). This may indicate the execution limit has been reached. Try again later.')

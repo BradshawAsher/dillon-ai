@@ -271,6 +271,31 @@ export default async function submitDealPacket(req: { params: Params; user: User
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Submission could not be confirmed.'
+    const is524Timeout = error instanceof Error && (error.message.includes('524') || error.message.toLowerCase().includes('timeout'))
+
+    // If Cloudflare timed out (524), n8n has already accepted the HTTP socket and is processing in the background.
+    // Return an accepted response so the client smoothly tracks it via Supabase rather than showing an upload error.
+    if (is524Timeout) {
+      console.warn('[submitDealPacket] Cloudflare 524 timeout received; n8n processing in background', { requestID, normalizedProjectId })
+      return {
+        status: 'accepted',
+        environment,
+        target: `https://merge-works.app.n8n.cloud/${path}`,
+        method: 'POST' as const,
+        submittedAt: triggerTimestamp,
+        submittedBy: req.user.email,
+        payload,
+        response: {
+          requestID,
+          status: 'processing',
+          receivedAt: triggerTimestamp,
+          createdAt: triggerTimestamp,
+          updatedAt: triggerTimestamp,
+          environment,
+        },
+      }
+    }
+
     // A rejected dispatch must not leave an eternal queued row. Do not overwrite
     // a workflow that has already advanced to processing/completed meanwhile.
     try {

@@ -8,7 +8,7 @@ This document provides a comprehensive technical reference for the 4-layer autom
 
 ```mermaid
 graph TD
-    A["Layer 4: AI Eval Benchmark Harness (58 Gold Docs, 7 Dimensions)"] --> B["Layer 3: Playwright End-to-End Tests (Real Chromium, 0 Tokens)"]
+    A["Layer 4: AI Eval Benchmark Harness (78 Gold Docs, 7 Dimensions)"] --> B["Layer 3: Playwright End-to-End Tests (Real Chromium, 0 Tokens)"]
     B --> C["Layer 2: API Integration Tests (Real HTTP Router, 0 Tokens)"]
     C --> D["Layer 1: Vitest Unit & Domain Test Suite (95 Suites / 935 Tests)"]
     style A fill:#2563eb,stroke:#1d4ed8,stroke-width:2px,color:#fff
@@ -22,7 +22,7 @@ graph TD
 | **Layer 1: Unit & Domain Tests** | **Vitest** (v4.x) | Core business logic, mathematical reconciliations, duration bounds ($\le 180\text{s}$), latency formatters, and security guards. | ~40s (935 tests) | $0.00 / 0 tokens |
 | **Layer 2: API Integration Tests** | **Vitest + Node HTTP** | Sends real loopback HTTP requests through the production `/api/diligence/*` router while mocking external service boundaries. | ~2s (26 tests) | $0.00 / 0 tokens |
 | **Layer 3: End-to-End (E2E) Tests** | **Playwright** (Chromium) | Full browser DOM rendering, tab switching, responsive KPI cards, questionnaire generation and local prefill, accordion collapse, and Command Palette navigation. | ~2 min (19 tests) | $0.00 / 0 tokens |
-| **Layer 4: AI Eval Benchmark Harness** | **TypeScript + CLI** (`run-evals.ts`) | Golden benchmark validation against 58 M&A data room documents across 7 accuracy dimensions (`EVAL_MIN_SCORE >= 80%`). | ~1.5s (automated) | $0.00 / 0 tokens |
+| **Layer 4: AI Eval Benchmark Harness** | **TypeScript + CLI** (`run-evals.ts`) | Golden benchmark validation against 78 M&A data room documents across 7 accuracy dimensions (`EVAL_MIN_SCORE >= 80%`). | ~1.5s (automated) | $0.00 / 0 tokens |
 
 ---
 
@@ -125,14 +125,14 @@ npm --prefix frontend test
 
 ---
 
-## 6. Automated AI Evaluation Harness (58 Golden Benchmarks)
+## 6. Automated AI Evaluation Harness (78 Golden Benchmarks)
 
 Run the eval harness:
 ```bash
 npx tsx scripts/run-evals.ts
 ```
 
-- Compares model extractions against **58 gold-standard M&A deal room documents** across 7 dimensions (Numeric Accuracy, Unit Precision, Semantic Completeness, Citations, Contradiction Detection, Hallucination Prevention, Temporal Grounding).
+- Compares model extractions against **78 gold-standard M&A deal room documents** across 7 dimensions (Numeric Accuracy, Unit Precision, Semantic Completeness, Citations, Contradiction Detection, Hallucination Prevention, Temporal Grounding).
 - **CI Gate**: Exits non-zero if total score falls below **80%** (`EVAL_MIN_SCORE=80`).
 
 ---

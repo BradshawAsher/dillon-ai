@@ -15,7 +15,7 @@ Private equity sponsors, search funds, and M&A advisory teams spend **60–120 h
 2. **Hybrid Multi-Model Extraction**: High-precision extraction routing via `OpenAI 5.6 Terra` (Primary) with automated fallback to `OpenAI 5.6 Sol` (Backup).
 3. **Deterministic Math & Contradiction Engine**: Zero-hallucination arithmetic verification, checking seller add-backs, balance sheet equations, and cross-document revenue reconciliation (e.g., CIM revenue vs. bank statement cash vs. tax returns).
 4. **Acquisition Judgment & Deal Synthesis**: Automated EV/SDE valuation modeling, purchase price negotiation levers, working capital peg adjustments, closing escrows, and IC-ready Deal Memos.
-5. **Continuous Benchmark Evaluation Harness**: 58-document golden benchmark dataset scoring extraction accuracy, risk recall, and acquisition judgment across 5 core dimensions.
+5. **Continuous Benchmark Evaluation Harness**: 78-document golden benchmark dataset scoring extraction accuracy, risk recall, and acquisition judgment across 5 core dimensions.
 
 ---
 
@@ -295,7 +295,7 @@ Once all documents in a project batch complete, the **Project Synthesis Consolid
 * **IC Deal Memo Generation**: Produces an executive-ready Investment Committee memo with full audit trail citations.
 
 ### H. Automated Evaluation Harness & Golden Benchmarks (`EVALS.md`)
-* **Golden Dataset**: 58 production M&A documents across 6 full deal packets.
+* **Golden Dataset**: 78 production M&A documents across full deal packets.
 * **5-Dimension 100-Point Rubric**:
   1. *Classification (10 pts)*: Document type detection.
   2. *Financial Facts (10 pts)*: Precision of numerical extraction ($\le 1\%$ error tolerance).
@@ -359,4 +359,4 @@ or n8n workflow rewrite. See the [recovery runbook](docs/UPLOAD_AND_BATCH_RECOVE
 * **Per-Document Cloud Cost**: $\approx \$0.055$ / document (OpenAI 5.6 Terra).
 * **Per-Project Synthesis Cost**: $\approx \$0.065$ / deal synthesis.
 * **Network Egress Optimization**: the KPI RPC reduces aggregate reads by $> 99.8\%$; compact history/synthesis projections reduce the measured combined raw portfolio response by about $67\%$ before transfer compression, with full evidence scoped to one project.
-* **Evaluation Harness Score**: **$98\%$ Overall Accuracy** across all 58 golden test documents.
+* **Evaluation Harness Score**: **$98\%$ Overall Accuracy** across all 78 golden test documents.
