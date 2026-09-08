@@ -2,6 +2,16 @@
 
 **Dillon AI** is the flagship AI-powered M&A intelligence platform developed by **MergeWorks** for private equity sponsors, search funds, and M&A advisors. Deal documents are ingested into project data rooms, processed asynchronously by MergeWorks' Pod 1 n8n cloud pipeline, and synthesized in a high-performance React workspace.
 
+## Why this matters
+
+Buying a business means deciding whether its reported earnings are sustainable and its asking price is justified. Buyers often need to read inconsistent spreadsheets, financial statements, and seller materials before they can even formulate the right questions.
+
+**Dillon AI helps buyers get to a reviewable first pass sooner:** organize supplied documents, extract financial facts, surface discrepancies, model assumptions, and prepare follow-up questions in one workspace. The goal is to spend less analyst time assembling information and more time evaluating the deal.
+
+Professional quality-of-earnings engagements can take weeks and cost thousands of dollars; one provider publishes a $6,000–$12,000 fee range and a typical two-to-three-week turnaround. That is a broader professional service, not an equivalent to our automated output. [Provider example](https://www.bedrockqoe.com/insights/quality-of-earnings-report-cost)
+
+Our positioning is **minutes to an initial analysis, with low incremental processing cost**, not “a complete professional diligence engagement for pennies.” Runtime varies with the packet and providers; packet cost must include extraction, synthesis, retries and parsing. Human review remains necessary. See [Business Case & Measurement](docs/BUSINESS_CASE.md) for users, benefits, limitations, and how to substantiate savings.
+
 ## Dual Core Agent Capabilities
 
 The Financial Due Diligence Agent automates two core M&A workflow stages (see [`PURPOSE.md`](PURPOSE.md) and [`LOI_DEPENDENCIES.md`](docs/LOI_DEPENDENCIES.md) for full breakdown):
@@ -28,7 +38,7 @@ MergeWorks supports three complementary diligence depth levels depending on tran
 
 ## Key Documentation Links
 
-- **[Senior Engineering Interview Masterclass (`INTERVIEW_QUESTIONS.md`)](INTERVIEW_QUESTIONS.md)** — Architectural talking points, system design trade-offs, and behavioral framing covering 500-concurrency load testing, Cloudflare 524 edge timeout resilience, zero hallucinations, data lineage, and zero-buffer streaming.
+- **[Business Case & Measurement](docs/BUSINESS_CASE.md)** — Plain-English value proposition, target users, and honest time/cost comparisons. Internal interview preparation is maintained separately in a git-ignored guide.
 - **[Data Lineage & Verification Tiers Guide (`docs/DATA_LINEAGE_AND_VERIFICATION_TIERS.md`)](docs/DATA_LINEAGE_AND_VERIFICATION_TIERS.md)** — 4-tier verification hierarchy (Confirmed, Verified, Reconciled, Calculated), interactive `DataOriginBadge` formula popovers, and citation trails.
 - **[Web Search Status, Setup & Pricing](docs/WEB_SEARCH_SETUP.md)** — Live web search is not yet available; compares Brave, OpenAI, and Tavily and explains future hosted/BYOK integration.
 - **[System Architecture & Technical Specification (`ARCHITECTURE.md`)](ARCHITECTURE.md)** — Comprehensive architecture diagrams, data flow sequence charts, component deep-dives, and interview masterclass talking points.

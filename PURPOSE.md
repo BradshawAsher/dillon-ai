@@ -2,6 +2,8 @@
 
 The **MergeWorks Financial Due Diligence Agent** is an AI-powered M&A intelligence workspace designed for private equity sponsors, search funds, corporate development teams, and M&A advisors.
 
+**Business objective:** reduce the repetitive work required to form an initial view of a deal, identify questions sooner, and give analysts traceable starting points for review. Automated analysis supports professional judgment; it does not replace a full quality-of-earnings engagement. See [Business Case & Measurement](docs/BUSINESS_CASE.md) for positioning, customer value and the evidence needed to quantify savings.
+
 The agent automates financial due diligence across **two distinct phases** of the acquisition lifecycle:
 
 1. **Phase 1: Pre-LOI Valuation Discovery & Normalized EBITDA Extraction**
