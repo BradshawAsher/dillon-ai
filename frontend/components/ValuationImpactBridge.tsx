@@ -69,8 +69,27 @@ export default function ValuationImpactBridge({ synthesis, baseValue, documents 
         try {
             const saved = JSON.parse(window.localStorage.getItem(storageKey(currentProjectId)) || '[]') as BridgeItem[]
             const byId = new Map(saved.map((item) => [item.id, item]))
-            setItems(suggested.map((item) => byId.get(item.id) ?? item))
-        } catch { setItems(suggested) }
+            const nextItems = suggested.map((item) => byId.get(item.id) ?? item)
+            setItems((prev) => {
+                if (
+                    prev.length === nextItems.length &&
+                    prev.every((p, i) => p.id === nextItems[i]?.id && p.amount === nextItems[i]?.amount && p.finding === nextItems[i]?.finding)
+                ) {
+                    return prev
+                }
+                return nextItems
+            })
+        } catch {
+            setItems((prev) => {
+                if (
+                    prev.length === suggested.length &&
+                    prev.every((p, i) => p.id === suggested[i]?.id && p.amount === suggested[i]?.amount)
+                ) {
+                    return prev
+                }
+                return suggested
+            })
+        }
     }, [currentProjectId, suggested])
     useEffect(() => { try { window.localStorage.setItem(storageKey(currentProjectId), JSON.stringify(items)) } catch { } }, [items, currentProjectId])
 

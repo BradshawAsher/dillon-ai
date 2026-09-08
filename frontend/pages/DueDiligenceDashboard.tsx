@@ -1632,6 +1632,8 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
         setHasRestoredLatestProject(true)
     }, [submissionHistoryLoading, hasRestoredLatestProject, projectSummaries, activeViewProjectId, setActiveViewProjectId, isExampleMode, submissionHistoryData])
 
+    const lastSyncedProjectKeyRef = useRef<string | null>(null)
+
     // Keep project fields in sync whenever selectedProjectKey changes, auto-resolving orphaned keys
     useEffect(() => {
         if (selectedProjectKey === 'new' || projectSummaries.length === 0) return
@@ -1644,25 +1646,31 @@ export default function DueDiligenceDashboard({ onReturnToLanding }: { onReturnT
                 (p.projectName && selectedProjectKey.toLowerCase().includes(p.projectName.toLowerCase()))
             ) || projectSummaries[0]
 
-            if (matchingProject) {
+            if (matchingProject && matchingProject.projectKey !== selectedProjectKey) {
                 if (import.meta.env.DEV) {
                     console.log(`[ProjectSync] Auto-resolving orphaned project key "${selectedProjectKey}" -> "${matchingProject.projectKey}"`)
                 }
                 setSelectedProjectKey(matchingProject.projectKey)
+                return
             }
         }
 
         if (matchingProject) {
-            if (dealName !== matchingProject.projectName) {
-                setDealName(matchingProject.projectName)
-            }
-            const targetPid = matchingProject.projectId || matchingProject.projectKey
-            if (projectId !== targetPid) {
-                setProjectId(targetPid)
-            }
-            const targetStage = matchingProject.stage || 'post-loi'
-            if (projectStage !== targetStage) {
-                setProjectStage(targetStage)
+            const resolvedKey = matchingProject.projectKey || matchingProject.projectId
+            if (lastSyncedProjectKeyRef.current !== resolvedKey) {
+                lastSyncedProjectKeyRef.current = resolvedKey
+                const targetName = (matchingProject.projectName || '').trim()
+                if (targetName && (dealName || '').trim() !== targetName) {
+                    setDealName(targetName)
+                }
+                const targetPid = matchingProject.projectId || matchingProject.projectKey
+                if (targetPid && projectId !== targetPid) {
+                    setProjectId(targetPid)
+                }
+                const targetStage = matchingProject.stage || 'post-loi'
+                if (projectStage !== targetStage) {
+                    setProjectStage(targetStage)
+                }
             }
         }
     }, [dealName, projectId, projectStage, projectSummaries, selectedProjectKey, setDealName, setProjectId, setProjectStage, setSelectedProjectKey])

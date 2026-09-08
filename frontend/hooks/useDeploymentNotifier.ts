@@ -119,17 +119,9 @@ export function useDeploymentNotifier(): DeploymentState {
                 }
             } catch {}
 
-            // 2. If version.json doesn't indicate a new deployment, check if GitHub has a newer commit (building on Vercel)
-            if (currentCommit !== 'local') {
-                try {
-                    const ghRes = await fetch(GITHUB_REPO_COMMITS_URL, {
-                        headers: { Accept: 'application/vnd.github.v3+json' },
-                    })
-                    if (ghRes.ok) {
-                        ghData = await ghRes.json()
-                    }
-                } catch {}
-            }
+            // 2. We intentionally avoid unauthenticated client-side pings to api.github.com
+            // to avoid hitting GitHub IP rate limits (60 req/hr) and 403 console errors in production.
+            // Deployment status is accurately tracked by live deployed version.json.
 
             const result = evaluateDeploymentStatus(currentCommit, currentBuiltAt, versionData, ghData)
             setStatus(result.status)

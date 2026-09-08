@@ -135,49 +135,60 @@ export default function EbitdaReconstructionCard({ model, onOpenEvidence }: { mo
     const margin = ebitda / revenue
     const adjustedMargin = adjustedEbitda && revenue > 0 ? adjustedEbitda / revenue : margin
     const opex = revenue - ebitda
-    const lines: LineItem[] = [
-        { label: 'Revenue', value: revenue, source: 'documented' },
-        { label: 'Less: Operating expenses (implied)', value: -opex, source: 'calculated', note: 'Revenue minus EBITDA/SDE' },
-        { label: 'Documented EBITDA / SDE', value: ebitda, source: 'documented' },
-    ]
+    const lines: LineItem[] = useMemo(() => {
+        const list: LineItem[] = [
+            { label: 'Revenue', value: revenue, source: 'documented' },
+            { label: 'Less: Operating expenses (implied)', value: -opex, source: 'calculated', note: 'Revenue minus EBITDA/SDE' },
+            { label: 'Documented EBITDA / SDE', value: ebitda, source: 'documented' },
+        ]
 
-    const addBacks = facts.add_backs
-    if (addBacks && typeof addBacks.value === 'number' && addBacks.value > 0) {
-        lines.splice(2, 0, { label: 'Plus: Owner add-backs', value: addBacks.value, source: addBacks.status === 'confirmed' ? 'documented' : 'analyst' })
-    }
+        const addBacks = facts.add_backs
+        if (addBacks && typeof addBacks.value === 'number' && addBacks.value > 0) {
+            list.splice(2, 0, { label: 'Plus: Owner add-backs', value: addBacks.value, source: addBacks.status === 'confirmed' ? 'documented' : 'analyst' })
+        }
 
-    const depreciation = facts.depreciation
-    if (depreciation && typeof depreciation.value === 'number' && depreciation.value > 0) {
-        lines.splice(2, 0, { label: 'Plus: Depreciation & amortization', value: depreciation.value, source: depreciation.status === 'confirmed' ? 'documented' : 'analyst' })
-    }
+        const depreciation = facts.depreciation
+        if (depreciation && typeof depreciation.value === 'number' && depreciation.value > 0) {
+            list.splice(2, 0, { label: 'Plus: Depreciation & amortization', value: depreciation.value, source: depreciation.status === 'confirmed' ? 'documented' : 'analyst' })
+        }
 
-    const interest = facts.interest_expense
-    if (interest && typeof interest.value === 'number' && interest.value > 0) {
-        lines.splice(2, 0, { label: 'Plus: Interest expense', value: interest.value, source: interest.status === 'confirmed' ? 'documented' : 'analyst' })
-    }
+        const interest = facts.interest_expense
+        if (interest && typeof interest.value === 'number' && interest.value > 0) {
+            list.splice(2, 0, { label: 'Plus: Interest expense', value: interest.value, source: interest.status === 'confirmed' ? 'documented' : 'analyst' })
+        }
 
-    const taxes = facts.taxes
-    if (taxes && typeof taxes.value === 'number' && taxes.value > 0) {
-        lines.splice(2, 0, { label: 'Plus: Taxes', value: taxes.value, source: taxes.status === 'confirmed' ? 'documented' : 'analyst' })
-    }
+        const taxes = facts.taxes
+        if (taxes && typeof taxes.value === 'number' && taxes.value > 0) {
+            list.splice(2, 0, { label: 'Plus: Taxes', value: taxes.value, source: taxes.status === 'confirmed' ? 'documented' : 'analyst' })
+        }
 
-    // If analyst adjustments exist, add pro-forma items into the waterfall lines
-    if (adjustments.length > 0 && adjustedEbitda !== null) {
-        adjustments.forEach(adj => {
-            lines.push({
-                label: `${adj.type === 'add' ? 'Plus' : 'Less'}: ${adj.name} (Analyst)`,
-                value: adj.type === 'add' ? adj.amount : -adj.amount,
-                source: 'analyst',
-                note: `Analyst Pro-Forma ${adj.category}`,
+        // If analyst adjustments exist, add pro-forma items into the waterfall lines
+        if (adjustments.length > 0 && adjustedEbitda !== null) {
+            adjustments.forEach(adj => {
+                list.push({
+                    label: `${adj.type === 'add' ? 'Plus' : 'Less'}: ${adj.name} (Analyst)`,
+                    value: adj.type === 'add' ? adj.amount : -adj.amount,
+                    source: 'analyst',
+                    note: `Analyst Pro-Forma ${adj.category}`,
+                })
             })
-        })
-        lines.push({
-            label: 'Pro-Forma Adjusted EBITDA',
-            value: adjustedEbitda,
-            source: 'analyst',
-            note: 'Normalized pro-forma earnings run-rate',
-        })
-    }
+            list.push({
+                label: 'Pro-Forma Adjusted EBITDA',
+                value: adjustedEbitda,
+                source: 'analyst',
+                note: 'Normalized pro-forma earnings run-rate',
+            })
+        }
+        return list
+    }, [revenue, opex, ebitda, facts, adjustments, adjustedEbitda])
+
+    const waterfallData = useMemo(() => {
+        return lines.filter(l => l.label !== 'Pro-Forma Adjusted EBITDA').map((line): WaterfallDatum => ({
+            label: line.label.replace('Less: ', '').replace('Plus: ', '').replace(' (implied)', '').replace(' (Analyst)', ''),
+            value: line.value,
+            type: line.label === 'Revenue' || line.label === 'Documented EBITDA / SDE' ? 'total' : line.value >= 0 ? 'positive' : 'negative',
+        }))
+    }, [lines])
 
     const warnings: string[] = []
     if (margin > 0.6) warnings.push(`Documented margin is ${pct(margin)} — unusually high, verify add-backs`)
@@ -258,11 +269,7 @@ export default function EbitdaReconstructionCard({ model, onOpenEvidence }: { mo
                 <WaterfallChart
                     title="EBITDA Bridge Flow"
                     description="Visual flow from revenue through expenses to normalized EBITDA. Green bars add value; red bars subtract."
-                    data={lines.filter(l => l.label !== 'Pro-Forma Adjusted EBITDA').map((line): WaterfallDatum => ({
-                        label: line.label.replace('Less: ', '').replace('Plus: ', '').replace(' (implied)', '').replace(' (Analyst)', ''),
-                        value: line.value,
-                        type: line.label === 'Revenue' || line.label === 'Documented EBITDA / SDE' ? 'total' : line.value >= 0 ? 'positive' : 'negative',
-                    }))}
+                    data={waterfallData}
                 />
 
                 {/* Analyst Adjustments Manager */}
