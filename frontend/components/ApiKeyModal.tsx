@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useId } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../lib/shadcn/card'
 import { Button } from '../lib/shadcn/button'
 import { Input } from '../lib/shadcn/input'
@@ -23,6 +23,40 @@ function safeSetItem(key: string, value: string): void {
 }
 function safeRemoveItem(key: string): void {
     try { localStorage.removeItem(key) } catch { /* best effort */ }
+}
+
+// One labeled model-role dropdown. Extracted so the four provider tabs don't
+// repeat the same 12-line <div><Label><select> block sixteen times, and so the
+// label is programmatically associated with the control (htmlFor/id + aria-label)
+// for screen readers instead of floating next to it.
+function ModelRoleSelect({
+    label,
+    value,
+    onChange,
+    options,
+}: {
+    label: string
+    value: string
+    onChange: (value: string) => void
+    options: readonly string[]
+}) {
+    const id = useId()
+    return (
+        <div>
+            <Label htmlFor={id} className="text-[10px] text-muted-foreground mb-1 block">{label}</Label>
+            <select
+                id={id}
+                aria-label={label}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
+            >
+                {options.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                ))}
+            </select>
+        </div>
+    )
 }
 
 export interface ProviderModelConfig {
@@ -439,54 +473,30 @@ export function ApiKeyModal({ open, onOpenChange }: ApiKeyModalProps) {
                                     <span className="text-xs font-semibold">Anthropic Model Pipeline Roles</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Doc Extraction (Primary)</Label>
-                                        <select
-                                            value={anthropicModels.docPrimary}
-                                            onChange={(e) => setAnthropicModels(prev => ({ ...prev, docPrimary: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.anthropic.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Doc Extraction (Backup)</Label>
-                                        <select
-                                            value={anthropicModels.docBackup}
-                                            onChange={(e) => setAnthropicModels(prev => ({ ...prev, docBackup: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.anthropic.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Project Synthesis (Primary)</Label>
-                                        <select
-                                            value={anthropicModels.synthPrimary}
-                                            onChange={(e) => setAnthropicModels(prev => ({ ...prev, synthPrimary: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.anthropic.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Project Synthesis (Backup)</Label>
-                                        <select
-                                            value={anthropicModels.synthBackup}
-                                            onChange={(e) => setAnthropicModels(prev => ({ ...prev, synthBackup: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.anthropic.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    <ModelRoleSelect
+                                        label="Doc Extraction (Primary)"
+                                        value={anthropicModels.docPrimary}
+                                        onChange={(v) => setAnthropicModels(prev => ({ ...prev, docPrimary: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.anthropic}
+                                    />
+                                    <ModelRoleSelect
+                                        label="Doc Extraction (Backup)"
+                                        value={anthropicModels.docBackup}
+                                        onChange={(v) => setAnthropicModels(prev => ({ ...prev, docBackup: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.anthropic}
+                                    />
+                                    <ModelRoleSelect
+                                        label="Project Synthesis (Primary)"
+                                        value={anthropicModels.synthPrimary}
+                                        onChange={(v) => setAnthropicModels(prev => ({ ...prev, synthPrimary: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.anthropic}
+                                    />
+                                    <ModelRoleSelect
+                                        label="Project Synthesis (Backup)"
+                                        value={anthropicModels.synthBackup}
+                                        onChange={(v) => setAnthropicModels(prev => ({ ...prev, synthBackup: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.anthropic}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -519,54 +529,30 @@ export function ApiKeyModal({ open, onOpenChange }: ApiKeyModalProps) {
                                     <span className="text-xs font-semibold">OpenAI Model Pipeline Roles</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Doc Extraction (Primary)</Label>
-                                        <select
-                                            value={openaiModels.docPrimary}
-                                            onChange={(e) => setOpenaiModels(prev => ({ ...prev, docPrimary: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.openai.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Doc Extraction (Backup)</Label>
-                                        <select
-                                            value={openaiModels.docBackup}
-                                            onChange={(e) => setOpenaiModels(prev => ({ ...prev, docBackup: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.openai.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Project Synthesis (Primary)</Label>
-                                        <select
-                                            value={openaiModels.synthPrimary}
-                                            onChange={(e) => setOpenaiModels(prev => ({ ...prev, synthPrimary: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.openai.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Project Synthesis (Backup)</Label>
-                                        <select
-                                            value={openaiModels.synthBackup}
-                                            onChange={(e) => setOpenaiModels(prev => ({ ...prev, synthBackup: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.openai.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    <ModelRoleSelect
+                                        label="Doc Extraction (Primary)"
+                                        value={openaiModels.docPrimary}
+                                        onChange={(v) => setOpenaiModels(prev => ({ ...prev, docPrimary: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.openai}
+                                    />
+                                    <ModelRoleSelect
+                                        label="Doc Extraction (Backup)"
+                                        value={openaiModels.docBackup}
+                                        onChange={(v) => setOpenaiModels(prev => ({ ...prev, docBackup: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.openai}
+                                    />
+                                    <ModelRoleSelect
+                                        label="Project Synthesis (Primary)"
+                                        value={openaiModels.synthPrimary}
+                                        onChange={(v) => setOpenaiModels(prev => ({ ...prev, synthPrimary: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.openai}
+                                    />
+                                    <ModelRoleSelect
+                                        label="Project Synthesis (Backup)"
+                                        value={openaiModels.synthBackup}
+                                        onChange={(v) => setOpenaiModels(prev => ({ ...prev, synthBackup: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.openai}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -599,54 +585,30 @@ export function ApiKeyModal({ open, onOpenChange }: ApiKeyModalProps) {
                                     <span className="text-xs font-semibold">Google Gemini Model Pipeline Roles</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Doc Extraction (Primary)</Label>
-                                        <select
-                                            value={geminiModels.docPrimary}
-                                            onChange={(e) => setGeminiModels(prev => ({ ...prev, docPrimary: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.gemini.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Doc Extraction (Backup)</Label>
-                                        <select
-                                            value={geminiModels.docBackup}
-                                            onChange={(e) => setGeminiModels(prev => ({ ...prev, docBackup: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.gemini.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Project Synthesis (Primary)</Label>
-                                        <select
-                                            value={geminiModels.synthPrimary}
-                                            onChange={(e) => setGeminiModels(prev => ({ ...prev, synthPrimary: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.gemini.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Project Synthesis (Backup)</Label>
-                                        <select
-                                            value={geminiModels.synthBackup}
-                                            onChange={(e) => setGeminiModels(prev => ({ ...prev, synthBackup: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.gemini.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    <ModelRoleSelect
+                                        label="Doc Extraction (Primary)"
+                                        value={geminiModels.docPrimary}
+                                        onChange={(v) => setGeminiModels(prev => ({ ...prev, docPrimary: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.gemini}
+                                    />
+                                    <ModelRoleSelect
+                                        label="Doc Extraction (Backup)"
+                                        value={geminiModels.docBackup}
+                                        onChange={(v) => setGeminiModels(prev => ({ ...prev, docBackup: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.gemini}
+                                    />
+                                    <ModelRoleSelect
+                                        label="Project Synthesis (Primary)"
+                                        value={geminiModels.synthPrimary}
+                                        onChange={(v) => setGeminiModels(prev => ({ ...prev, synthPrimary: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.gemini}
+                                    />
+                                    <ModelRoleSelect
+                                        label="Project Synthesis (Backup)"
+                                        value={geminiModels.synthBackup}
+                                        onChange={(v) => setGeminiModels(prev => ({ ...prev, synthBackup: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.gemini}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -679,54 +641,30 @@ export function ApiKeyModal({ open, onOpenChange }: ApiKeyModalProps) {
                                     <span className="text-xs font-semibold">DeepSeek Model Pipeline Roles</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Doc Extraction (Primary)</Label>
-                                        <select
-                                            value={deepseekModels.docPrimary}
-                                            onChange={(e) => setDeepseekModels(prev => ({ ...prev, docPrimary: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.deepseek.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Doc Extraction (Backup)</Label>
-                                        <select
-                                            value={deepseekModels.docBackup}
-                                            onChange={(e) => setDeepseekModels(prev => ({ ...prev, docBackup: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.deepseek.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Project Synthesis (Primary)</Label>
-                                        <select
-                                            value={deepseekModels.synthPrimary}
-                                            onChange={(e) => setDeepseekModels(prev => ({ ...prev, synthPrimary: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.deepseek.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-[10px] text-muted-foreground mb-1 block">Project Synthesis (Backup)</Label>
-                                        <select
-                                            value={deepseekModels.synthBackup}
-                                            onChange={(e) => setDeepseekModels(prev => ({ ...prev, synthBackup: e.target.value }))}
-                                            className="w-full text-xs rounded-md border border-input bg-background px-2 py-1.5 text-foreground shadow-xs cursor-pointer"
-                                        >
-                                            {PROVIDER_MODEL_OPTIONS.deepseek.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    <ModelRoleSelect
+                                        label="Doc Extraction (Primary)"
+                                        value={deepseekModels.docPrimary}
+                                        onChange={(v) => setDeepseekModels(prev => ({ ...prev, docPrimary: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.deepseek}
+                                    />
+                                    <ModelRoleSelect
+                                        label="Doc Extraction (Backup)"
+                                        value={deepseekModels.docBackup}
+                                        onChange={(v) => setDeepseekModels(prev => ({ ...prev, docBackup: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.deepseek}
+                                    />
+                                    <ModelRoleSelect
+                                        label="Project Synthesis (Primary)"
+                                        value={deepseekModels.synthPrimary}
+                                        onChange={(v) => setDeepseekModels(prev => ({ ...prev, synthPrimary: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.deepseek}
+                                    />
+                                    <ModelRoleSelect
+                                        label="Project Synthesis (Backup)"
+                                        value={deepseekModels.synthBackup}
+                                        onChange={(v) => setDeepseekModels(prev => ({ ...prev, synthBackup: v }))}
+                                        options={PROVIDER_MODEL_OPTIONS.deepseek}
+                                    />
                                 </div>
                             </div>
                         </div>
