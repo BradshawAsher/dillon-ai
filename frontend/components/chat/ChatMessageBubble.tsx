@@ -52,7 +52,9 @@ function relativeTime(ts: number): string {
     const min = Math.floor(sec / 60)
     if (min < 60) return `${min}m ago`
     const hrs = Math.floor(min / 60)
-    return `${hrs}h ago`
+    if (hrs < 24) return `${hrs}h ago`
+    const days = Math.floor(hrs / 24)
+    return `${days}d ago`
 }
 
 export type ChatMessageBubbleProps = {
