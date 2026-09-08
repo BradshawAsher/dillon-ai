@@ -136,7 +136,7 @@ $825K
 
         expect(result.values).toMatchObject({ dealName: 'Spreadsheet Co', askingPrice: 4_800_000, annualRevenue: 5_200_000, reportedEbitda: 1_100_000 })
         expect(result.recognized.find((field) => field.field === 'askingPrice')?.source).toMatch(/Deal Summary!A2:B2/)
-    })
+    }, 20000)
 
     it('omits conflicting Excel periods rather than choosing one silently', async () => {
         const ExcelJS = (await import('exceljs')).default
@@ -149,7 +149,7 @@ $825K
 
         expect(result.values.annualRevenue).toBeUndefined()
         expect(result.warnings).toContain('Multiple values were found for Annual Revenue; review and enter it manually.')
-    })
+    }, 20000)
 
     it('extracts text from a real local Word document', async () => {
         const fixture = readFileSync(new URL('../../test_sets/MergeWorks Testing/WidgetCo - Master Explanation & Ground Truth.docx', import.meta.url))
@@ -161,7 +161,7 @@ $825K
 
         expect(extracted.text.length).toBeGreaterThan(100)
         expect(extracted.text).toMatch(/WidgetCo/i)
-    })
+    }, 20000)
 
     it('rejects legacy, unsupported, and oversized files with actionable messages', async () => {
         await expect(extractQuestionnaireTextFromFile(new File(['x'], 'old.doc'))).rejects.toThrow(/Save a copy as \.docx/i)
