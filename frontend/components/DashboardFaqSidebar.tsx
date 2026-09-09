@@ -34,7 +34,7 @@ export default function DashboardFaqSidebar({
 }: DashboardFaqSidebarProps) {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedCategory, setSelectedCategory] = useState<
-        'all' | 'getting-started' | 'diligence' | 'citations' | 'valuation' | 'troubleshooting'
+        'all' | 'getting-started' | 'diligence' | 'recommendations' | 'citations' | 'valuation' | 'troubleshooting'
     >('all')
     // Track the open FAQ by its question text, not a list index — otherwise
     // filtering/searching leaves the wrong item expanded (the index now points
@@ -184,7 +184,7 @@ export default function DashboardFaqSidebar({
         { id: 'citations', label: 'Citations' },
         { id: 'valuation', label: 'Valuation Math' },
         { id: 'troubleshooting', label: 'Troubleshooting' },
-    ]
+    ] as const
 
     const filteredFaqs = filterFaqs(dashboardFaqs, { category: selectedCategory, query: searchQuery })
 
@@ -301,7 +301,7 @@ export default function DashboardFaqSidebar({
                                 key={cat.id}
                                 type="button"
                                 aria-pressed={selectedCategory === cat.id}
-                                onClick={() => setSelectedCategory(cat.id as any)}
+                                onClick={() => setSelectedCategory(cat.id)}
                                 className={`rounded-full px-2 py-0.5 transition-all whitespace-nowrap text-[10.5px] font-semibold shrink-0 cursor-pointer ${
                                     selectedCategory === cat.id
                                         ? 'bg-primary text-primary-foreground font-bold shadow-xs'

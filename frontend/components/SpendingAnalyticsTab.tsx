@@ -773,6 +773,7 @@ export default function SpendingAnalyticsTab({
                             </div>
 
                             <select
+                                aria-label="Filter by business"
                                 value={selectedBusiness}
                                 onChange={(e) => setSelectedBusiness(e.target.value)}
                                 className="rounded-md border border-input bg-background px-2 py-1 text-xs focus:outline-hidden"
@@ -784,6 +785,7 @@ export default function SpendingAnalyticsTab({
                             </select>
 
                             <select
+                                aria-label="Filter by run type"
                                 value={runTypeFilter}
                                 onChange={(e) => setRunTypeOption(e.target.value as RunTypeOption)}
                                 className="rounded-md border border-input bg-background px-2 py-1 text-xs focus:outline-hidden"

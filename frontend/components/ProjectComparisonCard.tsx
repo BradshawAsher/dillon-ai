@@ -573,6 +573,7 @@ export default function ProjectComparisonCard({ projects, activeProjectId, onSel
                         <div className="flex items-center gap-1.5 ml-auto">
                             <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             <select
+                                aria-label="Sort projects by"
                                 value={sortBy}
                                 onChange={e => setSortBy(e.target.value as SortOption)}
                                 className="h-8 rounded-md border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"

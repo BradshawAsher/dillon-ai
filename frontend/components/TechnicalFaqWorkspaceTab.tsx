@@ -305,7 +305,7 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
 
                     {/* Category Filter Pills */}
                     <div className="flex flex-wrap gap-1.5 pt-2">
-                        {[
+                        {([
                             { id: 'all', label: 'All Topics' },
                             { id: 'chatbot', label: 'Dillon AI Copilot & 3 Tiers' },
                             { id: 'recommendations', label: 'Verdicts & Escalation' },
@@ -314,12 +314,12 @@ export default function TechnicalFaqWorkspaceTab({ onSwitchTab }: TechnicalFaqWo
                             { id: 'buttons', label: 'Button Guide' },
                             { id: 'data-modes', label: 'Data & Security' },
                             { id: 'troubleshooting', label: 'Troubleshooting' },
-                        ].map((cat) => (
+                        ] as const).map((cat) => (
                             <button
                                 key={cat.id}
                                 type="button"
                                 aria-pressed={selectedCategory === cat.id}
-                                onClick={() => setSelectedCategory(cat.id as any)}
+                                onClick={() => setSelectedCategory(cat.id)}
                                 className={`text-xs px-3 py-1 rounded-full transition-all cursor-pointer font-semibold ${
                                     selectedCategory === cat.id
                                         ? 'bg-primary text-white shadow-2xs'

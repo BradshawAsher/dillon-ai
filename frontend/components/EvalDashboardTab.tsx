@@ -42,6 +42,9 @@ import { formatMagnitude, resolveFinancialMetricsForProject } from '../utils/fin
 import { parseMagnitudeMoney } from '../utils/documentedFacts'
 import latestEvalReportData from '../../test_sets/eval_reports/latest_eval_report.json'
 
+type EvalStatusFilter = 'all' | 'pass' | 'fail'
+type EvalSortBy = 'default' | 'score_desc' | 'score_asc' | 'duration_desc' | 'name_asc'
+
 type EvalDashboardTabProps = {
     evalRuns?: Array<{
         id: number | string
@@ -314,10 +317,10 @@ export default function EvalDashboardTab({
     const [runningEval, setRunningEval] = useState(false)
     const [latestRunMessage, setBatchMessage] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
-    const [statusFilter, setStatusFilter] = useState<'all' | 'pass' | 'fail'>('all')
+    const [statusFilter, setStatusFilter] = useState<EvalStatusFilter>('all')
     const [businessFilter, setBusinessFilter] = useState<string>('all')
     const [modelFilter, setModelFilter] = useState<string>('all')
-    const [sortBy, setSortBy] = useState<'default' | 'score_desc' | 'score_asc' | 'duration_desc' | 'name_asc'>('default')
+    const [sortBy, setSortBy] = useState<EvalSortBy>('default')
     const [selectedDocViewerBusiness, setSelectedDocViewerBusiness] = useState<string | null>(null)
     const [viewerSearchQuery, setViewerSearchQuery] = useState('')
     const [showDocMinicards, setShowDocMinicards] = useState<boolean>(false)
@@ -1154,8 +1157,9 @@ export default function EvalDashboardTab({
 
                                 {/* Filter by Status */}
                                 <select
+                                    aria-label="Filter by status"
                                     value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                                    onChange={(e) => setStatusFilter(e.target.value as EvalStatusFilter)}
                                     className="text-xs px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium"
                                 >
                                     <option value="all">All Statuses (Pass & Fail)</option>
@@ -1165,6 +1169,7 @@ export default function EvalDashboardTab({
 
                                 {/* Filter by Business */}
                                 <select
+                                    aria-label="Filter by business"
                                     value={businessFilter}
                                     onChange={(e) => setBusinessFilter(e.target.value)}
                                     className="text-xs px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium max-w-[200px] truncate"
@@ -1177,6 +1182,7 @@ export default function EvalDashboardTab({
 
                                 {/* Filter by Model */}
                                 <select
+                                    aria-label="Filter by model"
                                     value={modelFilter}
                                     onChange={(e) => setModelFilter(e.target.value)}
                                     className="text-xs px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium"
@@ -1189,8 +1195,9 @@ export default function EvalDashboardTab({
 
                                 {/* Sort By */}
                                 <select
+                                    aria-label="Sort results by"
                                     value={sortBy}
-                                    onChange={(e) => setSortBy(e.target.value as any)}
+                                    onChange={(e) => setSortBy(e.target.value as EvalSortBy)}
                                     className="text-xs px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer font-medium"
                                 >
                                     <option value="default">Sort: By Deal Packet</option>

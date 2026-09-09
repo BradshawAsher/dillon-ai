@@ -24,6 +24,7 @@ import { estimateChatQueryCost } from '../utils/costModel'
 import type { ManualDealFormData } from '../utils/manualDealIntake'
 import { classifyQuestionnaireFile, questionnaireDraftFromImport, questionnaireDraftValues, type QuestionnaireDraft } from '../utils/questionnaireDraft'
 import { parseQuestionnaireFile } from '../utils/questionnaireImport'
+import { generateId } from '../utils/generateId'
 import { buildUnifiedMathChecks } from '../utils/unifiedMathChecks'
 import { BENCHMARK_PROVENANCE, detectSector, getSectorProfile } from '../utils/verticalBenchmarks'
 
@@ -2256,7 +2257,7 @@ export function generateSessionTitle(prompt: string): string {
 }
 
 export function createInitialSession(projectName?: string, initialMessages: Message[] = []): ChatSession {
-    const id = `session-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+    const id = generateId('session')
     let title = 'New Conversation'
     if (initialMessages.length > 0) {
         const firstUser = initialMessages.find(m => m.role === 'user')
@@ -4450,7 +4451,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     const existing = m.toolCalls || []
                     return {
                         ...m,
-                        toolCalls: [...existing, { id: `tool-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, toolName, args, status: 'running' }]
+                        toolCalls: [...existing, { id: generateId('tool'), toolName, args, status: 'running' }]
                     }
                 }))
             },
@@ -4523,7 +4524,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     const outTok = Math.round(answer.length / 3.8)
                     const cost = estimateChatQueryCost(inTok, outTok, providerName)
                     appendChatBillingRecord({
-                        id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                        id: generateId('chat'),
                         timestamp: new Date().toISOString(),
                         projectId: synthesis?.projectId || 'live-project',
                         businessName: projectName || synthesis?.companyName || 'Active Deal',
@@ -4569,7 +4570,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                             const cost = data.costUsd || data.cost_usd || estimateChatQueryCost(inTok, outTok, providerName)
 
                             appendChatBillingRecord({
-                                id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                                id: generateId('chat'),
                                 timestamp: new Date().toISOString(),
                                 projectId: synthesis?.projectId || 'live-project',
                                 businessName: projectName || synthesis?.companyName || 'Active Deal',
@@ -4613,7 +4614,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
             const inTok = Math.round((context.length + trimmed.length) / 3.8)
             const outTok = Math.round(fallback.content.length / 3.8)
             appendChatBillingRecord({
-                id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                id: generateId('chat'),
                 timestamp: new Date().toISOString(),
                 projectId: synthesis?.projectId || 'live-project',
                 businessName: projectName || synthesis?.companyName || 'Active Deal',
@@ -4706,7 +4707,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     const existing = m.toolCalls || []
                     return {
                         ...m,
-                        toolCalls: [...existing, { id: `tool-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, toolName, args, status: 'running' }]
+                        toolCalls: [...existing, { id: generateId('tool'), toolName, args, status: 'running' }]
                     }
                 }))
             },
@@ -4763,7 +4764,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                     const outTok = Math.round(answer.length / 3.8)
                     const cost = estimateChatQueryCost(inTok, outTok, providerName)
                     appendChatBillingRecord({
-                        id: `chat-rerun-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                        id: generateId('chat-rerun'),
                         timestamp: new Date().toISOString(),
                         projectId: synthesis?.projectId || 'live-project',
                         businessName: projectName || synthesis?.companyName || 'Active Deal',
@@ -4808,7 +4809,7 @@ export default function DealChatPanel({ synthesis, model, projectName, documents
                             const cost = data.costUsd || data.cost_usd || estimateChatQueryCost(inTok, outTok, providerName)
 
                             appendChatBillingRecord({
-                                id: `chat-rerun-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                                id: generateId('chat-rerun'),
                                 timestamp: new Date().toISOString(),
                                 projectId: synthesis?.projectId || 'live-project',
                                 businessName: projectName || synthesis?.companyName || 'Active Deal',

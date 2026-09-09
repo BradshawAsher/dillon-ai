@@ -204,6 +204,7 @@ Please perform an adversarial valuation and deal-structuring review:
                                         <span className="ml-2 text-xs font-medium text-primary">View evidence</span>
                                     </button>
                                     <select
+                                        aria-label="Value adjustment mechanism"
                                         value={item.mechanism}
                                         onChange={(event) =>
                                             setItems((current) =>
